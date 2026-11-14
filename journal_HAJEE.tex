@@ -90,6 +90,48 @@ devant, afin de garantir un affichage stable d'une exécution à l'autre.
 
 \section{Étape 1 : tournoi de base}
 \subsection{Moteur}
+\paragraph{Objectif.} Le moteur doit faire jouer une partie entre deux stratégies, puis un tournoi tous contre tous, sans
+connaître le détail des stratégies, il ne passe que par les méthodes \texttt{reset} et \texttt{jouer} définies à l'étape 0.
+
+\paragraph{Matrice des gains.} Elle est représentée par un dictionnaire dont la clé est le couple de coups (coup du joueur 1,
+coup du joueur 2) et la valeur le couple de gains correspondant, par exemple \texttt{("C", "D")} donne \texttt{(0, 5)}. Le
+gain d'un tour s'obtient ainsi en une seule lecture. 
+
+\paragraph{Déroulement d'une partie.} La fonction \texttt{jouer\_partie} remet les deux stratégies à zéro avec \texttt{reset},
+puis, à chaque tour, demande son coup à chaque stratégie, vérifie ces coups, les ajoute aux historiques et ajoute les gains
+aux scores. Elle renvoie les deux scores de la partie.
+
+\paragraph{Choix de conception.}
+\begin{itemize}
+  \item \textbf{Simultanéité des coups} : les deux coups sont demandés avant d'être ajoutés aux historiques. Aucune stratégie
+  ne peut donc voir le coup de l'adversaire du tour en cours, ce qui respecte la règle de l'énoncé (les deux joueurs choisissent
+  \og en même temps \fg{}).
+  \item \textbf{Copie des historiques} : chaque stratégie reçoit une copie des listes et non les listes du moteur. Une stratégie
+  qui modifierait sa liste, par erreur, ne peut donc pas fausser la partie. Le moteur fait ainsi respecter le contrat de l'étape 0
+  au lieu de simplement faire confiance aux stratégies.
+  \item \textbf{Vérification des coups} : si une stratégie renvoie autre chose que \texttt{"C"} ou \texttt{"D"}, le moteur
+  lève une erreur (\texttt{ValueError}) dont le message donne le nom de la stratégie et le coup reçu. Sans cette vérification,
+  le programme planterait plus loin, lors de la lecture des gains, avec un message beaucoup moins clair.
+\end{itemize}
+
+\paragraph{Vérification.} Pour contrôler \texttt{jouer\_partie} avant que les stratégies du cours soient écrites, nous l'avons
+lancée sur 200 tours avec deux stratégies très simples, l'une jouant toujours C et l'autre toujours D. Les scores attendus
+se calculent à la main :
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+Partie & Attendu & Obtenu \\
+\midrule
+toujours C contre toujours D & (0, 1000) & (0, 1000) \\
+toujours D contre toujours D & (400, 400) & (400, 400) \\
+toujours C contre toujours C & (600, 600) & (600, 600) \\
+\bottomrule
+\end{tabular}
+\end{center}
+Une stratégie renvoyant \texttt{"X"} provoque bien l'erreur attendue. Les résultats obtenus correspondent aux valeurs
+attendues : la lecture de la matrice et le calcul des scores sont corrects.
+
+
 \subsection{Tests}
 \subsection{Classement obtenu}
 \subsection{TFT gagne-t-il ?}
