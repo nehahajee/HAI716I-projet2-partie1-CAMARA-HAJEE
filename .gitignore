@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+
+# fichiers auxiliaires LaTeX
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+
+.DS_Store
