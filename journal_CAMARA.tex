@@ -1,0 +1,566 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[french]{babel}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{enumitem}
+\setlist{itemsep=1pt,topsep=3pt}
+\setlength{\emergencystretch}{3em}
+\setlength{\parskip}{3pt}
+\setlength{\parindent}{0pt}
+\raggedbottom % Évite l’étirement vertical forcé en bas des pages.
+
+% Insère une capture seule depuis le dossier captures/.
+\newcommand{\capture}[1]{%
+  \IfFileExists{captures/#1}{%
+    \par\medskip
+    \begin{center}
+      \includegraphics[width=0.85\linewidth,keepaspectratio]{captures/#1}
+    \end{center}
+    \medskip
+  }{}%
+}
+
+% Insère côte à côte la sortie de la commande et le graphique.
+\newcommand{\capturesDeux}[2]{%
+  \par\medskip
+  \begin{center}
+    \begin{minipage}[t]{0.48\linewidth}
+      \centering
+      \IfFileExists{captures/#1}{%
+        \includegraphics[width=\linewidth,keepaspectratio]{captures/#1}\\
+        {\footnotesize\textit{Sortie}}
+      }{}
+    \end{minipage}\hfill
+    \begin{minipage}[t]{0.48\linewidth}
+      \centering
+      \IfFileExists{captures/#2}{%
+        \includegraphics[width=\linewidth,keepaspectratio]{captures/#2}\\
+        {\footnotesize\textit{Graphe}}
+      }{}
+    \end{minipage}
+  \end{center}
+  \medskip
+}
+
+\title{Journal de bord - Projet 2, partie 1\\HAI716I : tournoi du dilemme du prisonnier itéré}
+\author{Zéïnab Aly CAMARA\\{\small Travail réalisé en binôme avec Neha HAJEE}}
+\date{}
+
+\begin{document}
+\maketitle
+
+%==============================================================================
+\section{Présentation du projet et organisation}
+%==============================================================================
+
+Le sujet nous demande de construire un tournoi du dilemme du prisonnier itéré, dans lequel plusieurs stratégies s'affrontent
+sur plusieurs parties. Il ne s'agit pas seulement de programmer les stratégies : nous devons aussi observer leurs
+comportements, comparer leurs scores et expliquer pourquoi certaines stratégies réussissent mieux que d'autres selon les
+règles du tournoi.
+
+Même si le sujet présente le travail comme individuel, nous avons été autorisées à travailler en binôme, à condition
+que chacune rédige son propre journal de bord. Nous avons donc réalisé le projet ensemble, tout en conservant chacune notre
+journal. Pour nous organiser, nous avons utilisé les \textit{issues} GitHub afin de découper le projet en tâches et de suivre
+leur avancement, ce qui nous a permis de travailler en parallèle et de garder une vue d'ensemble.
+
+Toutes les idées n'étaient cependant pas prévues dès le départ dans les issues. Au fil des essais, nous avons ajouté des outils
+de comparaison, notamment \texttt{compare\_auto\_jeu.py}, afin de répondre plus précisément à certaines questions soulevées
+par les premiers résultats. Le projet a donc évolué avec nos observations et pas uniquement en suivant une liste de tâches
+établie au début.
+
+Le moteur du tournoi a été développé par ma binôme. Sa fonction \texttt{jouer\_partie} réinitialise les deux stratégies, leur
+demande leur coup à chaque tour en ne leur transmettant que des copies des deux historiques (les coups sont simultanés), puis
+ajoute les gains lus dans la matrice de gains et renvoie les deux scores. De mon côté, je me suis notamment occupée des
+stratégies, de leurs tests et de mes contributions aux étapes suivantes, en particulier \textbf{GENEROUS-TFT},
+\textbf{TIT-FOR-TWO-TATS}, la sélection sur plusieurs générations et les matrices de gains alternatives. Nous avons également
+confronté nos choix et nos résultats pour garder une implémentation cohérente.
+
+\subsection*{Difficultés rencontrées pendant l'organisation}
+Avant de commencer la programmation, j'ai repris le cours sur les interactions multi-agents. J'ai notamment relu et résumé le
+CM4 pour mieux comprendre les stratégies et les notions qui se trouvent derrière le dilemme du prisonnier itéré. Cette reprise
+m'a été utile : je voulais comprendre les comportements que nous allions programmer et pas seulement traduire des règles en
+Python.
+
+J'ai également rencontré un problème matériel avec mon ordinateur. J'ai dû changer de machine, configurer un nouvel
+environnement de travail et transférer le projet ainsi que les éléments nécessaires pour reprendre le développement. Cette
+étape m'a fait perdre du temps au milieu du travail, mais j'ai pu remettre en place mon environnement et continuer le projet.
+
+%==============================================================================
+\section{Protocole expérimental}
+%==============================================================================
+
+\subsection{Paramètres imposés par le sujet}
+Pour le tournoi de base, nous avons repris les paramètres indiqués dans l'énoncé :
+\begin{center}
+\small
+\begin{tabular}{@{}lc@{}}
+\toprule
+Paramètre & Valeur \\
+\midrule
+Nombre de tours par partie & 200 \\
+Nombre de parties par paire de stratégies & 5 \\
+Graine aléatoire & 42 \\
+Gains (C,C) / (C,D) / (D,C) / (D,D) & 3/3 \quad 0/5 \quad 5/0 \quad 2/2 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Les coups sont simultanés : au moment de choisir C ou D, une stratégie ne connaît pas encore le coup que l'autre joueur va jouer
+au même tour. Elle peut en revanche utiliser l'historique des tours précédents.
+
+Nous avons fixé la graine aléatoire à 42 afin de pouvoir reproduire les expériences. Les stratégies qui utilisent du hasard
+reçoivent le générateur aléatoire du moteur (\texttt{rng}) au lieu d'utiliser directement le générateur global de Python. Cela
+permet de contrôler les tirages avec la graine choisie.
+
+\subsection{Le choix concernant l'auto-jeu}
+Nous avons choisi, pour le tournoi de base, qu'une stratégie ne joue pas contre elle-même. Elle peut néanmoins rencontrer une
+autre instance de la même stratégie : il s'agit alors de deux joueurs distincts qui appliquent la même Règle.
+
+Ce choix vise à ne pas avantager automatiquement les stratégies coopératives. Par exemple, deux copies de TIT-FOR-TAT coopèrent
+à chaque tour et obtiennent chacune 3 points par tour, soit 600 points sur une partie de 200 tours. Deux copies de ALL-D
+obtiennent chacune 2 points par tour, soit 400 points. Ce choix correspond également au mini-tournoi présenté dans le cours, où
+un joueur ne s'affronte pas lui-même. Nous avons toutefois voulu mesurer l'effet de cette décision au lieu de supposer qu'elle
+était sans conséquence. C'est pour cette raison que nous avons ajouté une comparaison entre un tournoi sans auto-jeu et un
+tournoi avec auto-jeu.
+
+\subsection{Quelques règles d'implémentation}
+Nous avons représenté les coups par les caractères \texttt{"C"} et \texttt{"D"}. Les historiques sont transmis aux stratégies à
+chaque tour : une stratégie peut donc prendre sa décision à partir de ses propres coups et de ceux de son adversaire. Si deux
+stratégies ont exactement le même score, la première dans l'ordre alphabétique est classée devant. Nous avons également fixé
+deux interprétations pour éviter les ambiguïtés :
+\begin{itemize}
+  \item \textbf{TESTER} observe la réponse de l'adversaire à sa trahison initiale. Comme les coups sont simultanés, elle ne
+  peut pas connaître la réponse au moment de jouer le deuxième tour ; elle prend donc sa décision à partir du coup adverse
+  observé au deuxième tour.
+  \item \textbf{JOSS} suit le comportement de TIT-FOR-TAT, mais remplace un coup C par D avec une probabilité de 10\,\%. Nous
+  avons retenu un tirage aléatoire plutôt qu'une trahison mécanique tous les dix tours, car un rythme fixe serait plus facile à
+  anticiper.
+\end{itemize}
+
+%==============================================================================
+\section{Les stratégies}
+%==============================================================================
+Cette partie présente les règles utilisées, les comportements que nous pouvions attendre avant de comparer les résultats (des
+hypothèses, qui ne garantissent pas qu'une stratégie obtiendra le meilleur score dans tous les tournois) et ce que les scores
+par paire ont montré ensuite. Les scores cités sont les scores moyens par partie de 200 tours (graine 42, 5 parties), regroupés
+dans le tableau~\ref{tab:matrice}. Les cinq premières stratégies viennent du cours (diapo~64).
+
+\subsection{ALL-D}
+\textbf{Règle :} ALL-D joue toujours D, quel que soit l'historique de la partie.
+
+\textbf{Comportement attendu :} Cette stratégie peut obtenir un bon score contre les stratégies qui commencent par coopérer ou
+qui pardonnent facilement, puisqu'elle profite de leurs coups C. En revanche, contre une autre ALL-D, les deux joueurs
+obtiennent seulement 2 points par tour. Elle ne cherche jamais à établir une coopération.
+
+\textbf{Observé.} Elle ne perd aucun duel, mais souvent de peu (403 contre 398 face à TIT-FOR-TAT). Elle écrase RANDOM (688
+contre 208) et ne fait que 400 contre une copie.
+
+\subsection{RANDOM}
+\textbf{Règle :} RANDOM choisit C ou D de manière aléatoire, avec une probabilité de 50\,\% pour chaque coup.
+
+\textbf{Comportement attendu :} Son comportement n'est pas adapté à un adversaire particulier : elle ne cherche ni à coopérer
+durablement ni à punir une trahison. Elle peut obtenir des résultats variables selon les tirages et selon la manière dont les
+autres stratégies réagissent à ses coups.
+
+\textbf{Observé.} Elle perd lourdement contre ALL-D (208 contre 688) et contre JOSS (480 contre 521) et fait jeu égal avec
+TIT-FOR-TAT (500 contre 497).
+
+\subsection{TIT-FOR-TAT}
+\textbf{Règle :} TIT-FOR-TAT commence par C, puis reproduit au tour suivant le dernier coup joué par son adversaire. C'est la
+stratégie gagnante du tournoi d'Axelrod de 1980.
+
+\textbf{Comportement attendu :} Elle commence par faire confiance, répond à une trahison par une trahison, mais revient à la
+coopération dès que l'adversaire coopère de nouveau. Elle devrait donc bien fonctionner avec des stratégies coopératives ou
+capables de revenir à la coopération. Elle risque en revanche d'être exploitée par une stratégie qui trahit dès le début.
+
+\textbf{Observé.} Elle ne gagne aucun duel nettement (398 contre 403 face à ALL-D, 414 contre 419 face à JOSS), mais elle fait
+600 contre une copie. Contre TESTER, elle fait 500 contre 500 : une alternance où chacun reçoit tour à tour 5 et 0.
+
+\subsection{TESTER}
+\textbf{Règle :} TESTER commence par D afin de tester la réaction de son adversaire. Si celui-ci répond D au deuxième tour,
+TESTER adopte ensuite le comportement de TIT-FOR-TAT. Dans le cas contraire, elle répète le motif C, C, D.
+
+\textbf{Comportement attendu :} Cette stratégie tente de repérer les adversaires qui se laissent exploiter. Elle peut profiter
+des stratégies qui ne ripostent pas, mais son test initial peut être coûteux face à une stratégie qui répond immédiatement à la
+trahison.
+
+\textbf{Observé.} Elle perd de peu contre ALL-D (398 contre 403) et fait 500 contre 500 face à TIT-FOR-TAT. Dans la population
+élargie, elle exploite fortement TIT-FOR-TWO-TATS (734 contre 399).
+
+\subsection{JOSS}
+\textbf{Règle :} JOSS suit TIT-FOR-TAT, mais lorsqu'elle devrait jouer C, elle joue D avec une probabilité de 10\,\%. Lorsqu'elle
+devrait déjà jouer D, elle conserve D.
+
+\textbf{Comportement attendu :} Ses trahisons occasionnelles peuvent lui permettre de profiter d'adversaires indulgents. En
+revanche, contre une stratégie qui réagit immédiatement comme TIT-FOR-TAT, une trahison aléatoire peut déclencher une période
+de représailles.
+
+\textbf{Observé.} Elle bat légèrement TIT-FOR-TAT (419 contre 414) et RANDOM (521 contre 480), mais ne fait que 408 contre une
+copie, loin des 600 de TIT-FOR-TAT : ses trahisons déclenchent des échos de représailles.
+
+\subsection{GENEROUS-TFT - stratégie ajoutée par mes soins}
+\textbf{Règle :} GENEROUS-TFT commence par C. Si l'adversaire a joué C au tour précédent, elle joue C. Si l'adversaire a joué D,
+elle lui pardonne avec une probabilité de 1/3 ; sinon, elle riposte par D. Dans le code, la classe Python s'appelle
+\texttt{GenerousTitForTat} et son nom dans le classement est \texttt{GENEROUS-TFT}.
+
+\textbf{Origine et choix du paramètre.} Cette stratégie reprend l'idée de TIT-FOR-TAT généreux évoquée dans le cours
+(Nowak et Sigmund), notamment comme moyen de limiter les cycles de représailles. La probabilité de pardon est calculée à partir
+des gains du dilemme avec la formule suivante, où $T=5$, $R=3$, $P=2$ et $S=0$ :
+\[
+g = \min\left(1-\frac{T-R}{R-S},\frac{R-P}{T-P}\right)
+  = \min\left(\frac{1}{3},\frac{1}{3}\right)=\frac{1}{3}.
+\]
+
+\textbf{Comportement attendu :} Par rapport à TIT-FOR-TAT, cette stratégie est plus indulgente : une trahison adverse ne provoque
+pas nécessairement une riposte. Nous voulions ainsi étudier si le pardon pouvait aider à éviter les enchaînements de
+représailles, notamment face à des stratégies qui introduisent parfois une trahison.
+
+\textbf{Observé (population élargie).} Elle fait 600 contre TIT-FOR-TAT, TIT-FOR-TWO-TATS et une copie, mais elle est exploitée
+par ALL-D (266 contre 600), RANDOM (422 contre 605) et TESTER (553 contre 600).
+
+\subsection{TIT-FOR-TWO-TATS - stratégie ajoutée par mes soins}
+\textbf{Règle :} TIT-FOR-TWO-TATS commence par C et ne riposte que si l'adversaire a joué D deux fois de suite. Une trahison
+isolée ne suffit donc pas à déclencher une punition. C'est une variante classique, plus tolérante, de TIT-FOR-TAT.
+
+\textbf{Comportement attendu :} Elle peut éviter de réagir trop fortement à une trahison ponctuelle, mais cette tolérance peut
+aussi être exploitée par des adversaires qui trahissent de temps en temps sans jouer deux D consécutifs.
+
+\textbf{Observé (population élargie).} Elle fait 600 contre TIT-FOR-TAT, GENEROUS-TFT et une copie, mais elle est très exploitée
+par TESTER (399 contre 734), RANDOM (403 contre 657) et JOSS (555 contre 630).
+
+%==============================================================================
+\section{Étape 1 - Tournoi de base}
+%==============================================================================
+
+\subsection{Résultats sans auto-jeu}
+Nous avons lancé le tournoi avec les cinq stratégies du cours, une graine fixée à 42, cinq parties de 200 tours par
+confrontation et sans auto-jeu. Le classement obtenu est le suivant :
+\begin{center}
+\small
+\begin{tabular}{@{}rlr@{}}
+\toprule
+Rang & Stratégie & Score total \\
+\midrule
+1 & ALL-D & \textbf{9\,482} \\
+2 & TIT-FOR-TAT & 9\,056 \\
+3 & TESTER & 8\,976 \\
+4 & JOSS & 8\,728 \\
+5 & RANDOM & 8\,477 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{La stratégie gagnante est ALL-D.} Ce résultat nous a surpris, car nous pensions que TIT-FOR-TAT gagnerait grâce à sa
+capacité à s'adapter au comportement de l'adversaire. Les scores par paire (tableau~\ref{tab:matrice}) montrent d'où vient
+l'avantage de ALL-D.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+  & ALL-D & RANDOM & TFT & TESTER & JOSS \\
+\midrule
+ALL-D & \textit{400} & 688 & 403 & 403 & 402 \\
+RANDOM & 208 & \textit{499} & 500 & 532 & 480 \\
+TIT-FOR-TAT & 398 & 497 & \textit{600} & 500 & 414 \\
+TESTER & 398 & 483 & 500 & \textit{533} & 405 \\
+JOSS & 398 & 521 & 419 & 405 & \textit{408} \\
+\bottomrule
+\end{tabular}
+\caption{Score moyen par partie de la stratégie en ligne contre celle en colonne (graine 42). La diagonale, en italique, est
+le score contre une copie : elle n'entre pas dans le tournoi sans auto-jeu.}
+\label{tab:matrice}
+\end{table}
+
+Contre les quatre autres, ALL-D totalise $688+403+403+402=1\,896$ points et TIT-FOR-TAT $398+497+500+414=1\,809$. L'écart de 87
+se décompose ainsi : $+191$ pour ALL-D contre RANDOM (688 contre 497), $-97$ contre TESTER (403 contre 500), $-12$ contre JOSS
+(402 contre 414) et $+5$ dans leur duel. ALL-D gagne donc surtout parce qu'elle exploite RANDOM, la seule stratégie de la
+population qui se laisse exploiter sans réagir. Face aux autres, elle ne gagne presque rien et TIT-FOR-TAT la devance même
+contre TESTER. Ce résultat montre que la stratégie qui semble la plus raisonnable dans une interaction particulière n'est pas
+forcément celle qui obtient le meilleur score total dans un tournoi donné.
+
+\subsection{Comparaison avec auto-jeu}
+Pour mesurer l'effet de notre choix de ne pas inclure l'auto-jeu, nous avons utilisé \texttt{compare\_auto\_jeu.py}. Le
+programme compare les classements obtenus avec et sans confrontation d'une stratégie contre une copie de sa propre Règle :
+\begin{center}
+\small
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Stratégie & Sans : rang & Sans : score & Avec : rang & Avec : score \\
+\midrule
+ALL-D & 1 & 9\,482 & 3 & 11\,482 \\
+TIT-FOR-TAT & 2 & 9\,056 & 1 & \textbf{12\,042} \\
+TESTER & 3 & 8\,976 & 2 & 11\,594 \\
+JOSS & 4 & 8\,728 & 5 & 10\,753 \\
+RANDOM & 5 & 8\,477 & 4 & 11\,118 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Avec l'auto-jeu, \textbf{TIT-FOR-TAT devient la gagnante}. Ses parties contre une copie lui rapportent environ
+$5\times600=3\,000$ points, contre $5\times400=2\,000$ pour ALL-D, ce qui suffit à renverser l'ordre. Ce n'est pas un effet de
+la graine : sur 30 graines, ALL-D gagne 30 fois sans auto-jeu et TIT-FOR-TAT gagne 30 fois avec. Cette comparaison confirme que le
+classement dépend aussi du protocole expérimental. Il ne suffit donc pas de dire qu'une stratégie est \og la meilleure \fg{}
+sans préciser la population et les règles du tournoi.
+
+\subsection{Réponse à la question du sujet : TIT-FOR-TAT gagne-t-elle chez nous ?}
+Dans notre tournoi de base \textbf{sans auto-jeu, TIT-FOR-TAT ne gagne pas} : elle termine deuxième, derrière ALL-D. En revanche,
+elle termine première lorsque l'auto-jeu est autorisé. Nous ne pouvons donc pas attribuer la victoire de TIT-FOR-TAT à son seul
+comportement : le résultat dépend aussi des stratégies présentes (la population est petite et peu coopérative, seule
+TIT-FOR-TAT coopère vraiment) et de la possibilité de rencontrer une copie de soi-même.
+
+%==============================================================================
+\section{Étape 2 - Ajout de nouvelles stratégies}
+%==============================================================================
+Pour élargir la population, nous avons ajouté deux stratégies qui ne figuraient pas parmi les cinq stratégies du cours :
+GENEROUS-TFT, qui peut pardonner une trahison avec une probabilité de 1/3 et TIT-FOR-TWO-TATS, qui attend deux trahisons
+consécutives avant de riposter. Ces deux règles permettent de comparer deux formes d'indulgence.
+
+\subsection{Classement de la population élargie sans auto-jeu}
+Avec les sept stratégies présentes dans la population étendue du code, nous obtenons :
+\begin{center}
+\small
+\begin{tabular}{@{}rlr@{}}
+\toprule
+Rang & Stratégie & Score total \\
+\midrule
+1 & TESTER & \textbf{15\,490} \\
+2 & TIT-FOR-TAT & 15\,087 \\
+3 & RANDOM & 15\,068 \\
+4 & JOSS & 15\,026 \\
+5 & GENEROUS-TFT & 14\,706 \\
+6 & TIT-FOR-TWO-TATS & 14\,673 \\
+7 & ALL-D & 14\,514 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{La stratégie gagnante est TESTER.} L'ajout de stratégies modifie le classement : ALL-D, première dans le tournoi de
+base, se retrouve dernière. Les scores par paire l'expliquent : ALL-D ne dépasse 400 points que contre RANDOM (688) et
+GENEROUS-TFT (600), alors que les autres font 600 contre les stratégies indulgentes et que TESTER exploite TIT-FOR-TWO-TATS
+(734 contre 399). Ajouter des stratégies coopératives profite donc davantage à celles qui coopèrent qu'à ALL-D.
+
+Les deux stratégies que j'ai ajoutées ne prennent pas les premières places. Cela ne signifie pas que leur principe est inutile :
+elles ont été conçues pour tester des comportements particuliers, notamment le pardon et la tolérance et pas pour garantir une
+première place dans toutes les populations. Le résultat est robuste (sur 30 graines, TESTER gagne 30 fois), mais les écarts en
+tête restent faibles : ce classement vaut pour les paramètres et les stratégies de cette expérience.
+
+\subsection{Comparaison avec et sans auto-jeu dans la population élargie}
+\begin{center}
+\small
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Stratégie & Sans : rang & Sans : score & Avec : rang & Avec : score \\
+\midrule
+TESTER & 1 & 15\,490 & 1 & \textbf{18\,175} \\
+TIT-FOR-TAT & 2 & 15\,087 & 2 & 18\,061 \\
+RANDOM & 3 & 15\,068 & 5 & 17\,527 \\
+JOSS & 4 & 15\,026 & 6 & 16\,970 \\
+GENEROUS-TFT & 5 & 14\,706 & 3 & 17\,847 \\
+TIT-FOR-TWO-TATS & 6 & 14\,673 & 4 & 17\,761 \\
+ALL-D & 7 & 14\,514 & 7 & 16\,514 \\
+\bottomrule
+\end{tabular}
+\end{center}
+Dans cette population élargie, TESTER reste première avec ou sans auto-jeu. L'auto-jeu modifie néanmoins les rangs de plusieurs
+stratégies : GENEROUS-TFT passe notamment de la cinquième à la troisième place, car elle fait 600 contre une copie.
+
+%==============================================================================
+\section{Étape 3 - Modifications du tournoi}
+%==============================================================================
+Pour cette étape, nous avons étudié deux modifications prévues par le sujet : la sélection sur plusieurs générations et le
+remplacement de la matrice de gains du dilemme par d'autres matrices. Nous avons choisi la sélection parce qu'un tournoi
+additionne des scores une seule fois, alors que le succès d'une stratégie dépend de qui l'entoure : la sélection demande si
+elle survit quand sa part dépend de ses résultats. Nous avons choisi d'autres matrices (chasse au cerf, poule mouillée, vues dans
+le cours) pour vérifier si nos conclusions dépendent du dilemme lui-même.
+
+\subsection{Sélection sur plusieurs générations}
+\textbf{Principe.} Nous avons implémenté une dynamique inspirée de la dynamique de réplication. Au départ, toutes les
+stratégies ont la même proportion. La fitness d'une stratégie dépend de son score moyen face à la population présente et
+sa proportion augmente si elle dépasse la fitness moyenne :
+\[
+p_i' = p_i \times \frac{f_i}{\bar f},
+\]
+où \(p_i\) est la proportion de la stratégie \(i\), \(f_i\) sa fitness et \(\bar f\) la fitness moyenne. La matrice des scores
+moyens est calculée une fois avec la graine, puis réutilisée. Les proportions restent normalisées et il n'y a pas de mutation :
+une proportion exactement nulle ne peut pas réapparaître.
+
+\textbf{Population du cours} (100 générations, matrice du dilemme, graine 42) : TIT-FOR-TAT passe de 0,200 à \textbf{1,000} et
+les quatre autres (TESTER, RANDOM, JOSS, ALL-D) tombent à 0,000.
+
+Ce résultat est différent du tournoi sans auto-jeu, où ALL-D arrivait première. L'explication est dans la diagonale de la
+matrice : à la génération 0, la fitness de chaque stratégie est la moyenne de sa ligne du tableau~\ref{tab:matrice}, copie
+comprise (TIT-FOR-TAT 482, TESTER 464, ALL-D 459, RANDOM 444, JOSS 430). C'est exactement l'ordre du tournoi \emph{avec}
+auto-jeu : la sélection fait rencontrer des copies, comme ce tournoi et non comme le tournoi de référence. Ensuite, les
+stratégies faibles disparaissent et retirent leurs proies à ALL-D, qui ne fait que 400 contre une copie. Ce résultat dépend
+aussi des proportions initiales et de l'absence de mutation.
+
+\textbf{Population élargie} (sept stratégies, 0,143 chacune au départ) :
+\begin{center}
+\small
+\begin{tabular}{@{}lr@{}}
+\toprule
+Stratégie & Proportion à la génération 100 \\
+\midrule
+TIT-FOR-TAT & \textbf{0,591} \\
+GENEROUS-TFT & \textbf{0,382} \\
+TIT-FOR-TWO-TATS & 0,022 \\
+RANDOM & 0,003 \\
+TESTER & 0,002 \\
+JOSS, ALL-D & 0,000 \\
+\bottomrule
+\end{tabular}
+\end{center}
+TIT-FOR-TAT reste la plus représentée, mais ne prend plus toute la population. GENEROUS-TFT se maintient à environ 38\,\%, bien
+mieux que TIT-FOR-TWO-TATS : les deux font 600 l'une contre l'autre et contre elles-mêmes, mais TIT-FOR-TWO-TATS est exploitée
+par TESTER, RANDOM et JOSS. C'est une observation liée à notre matrice de scores et à notre modèle de sélection et non une
+propriété universelle de ces stratégies.
+
+\subsection{Modification des matrices de gains}
+Les matrices disponibles dans le code sont : le dilemme du cours (3/3, 0/5, 5/0, 2/2), le dilemme avec une punition plus
+sévère (D,D = 1/1), la chasse au cerf (4/4, 0/3, 3/0, 1/1) et la poule mouillée (3/3, 1/4, 4/1, 0/0). Les deux jeux
+alternatifs étudiés ici sont :
+\begin{itemize}
+  \item \textbf{La chasse au cerf} : la coopération mutuelle est particulièrement intéressante, mais elle suppose que les
+  joueurs se fassent confiance. La matrice comporte deux équilibres de Nash, correspondant à la coopération mutuelle et à la
+  défection mutuelle.
+  \item \textbf{La poule mouillée} : le pire résultat pour les deux joueurs est la défection mutuelle. Il peut donc être
+  risqué de toujours choisir D, contrairement à une interprétation trop simplifiée du dilemme du prisonnier.
+\end{itemize}
+Les valeurs numériques de la poule mouillée ont été choisies dans le code pour respecter l'ordre de préférence indiqué dans le
+cours ; elles ne sont pas présentées comme des valeurs imposées par le support.
+
+\textbf{Chasse au cerf.} Avec la population du cours, la graine 42 et 100 générations, TIT-FOR-TAT atteint une proportion
+finale de 1,000, les quatre autres 0,000. Ici, trahir un coopérateur rapporte 3, moins que la coopération mutuelle (4) :
+l'exploitation ne paie plus. Deux copies de TIT-FOR-TAT font 800 points, deux copies de ALL-D seulement 200. TIT-FOR-TAT est
+donc la gagnante de cette expérience de sélection.
+
+\textbf{Poule mouillée.} TIT-FOR-TAT atteint également 1,000. Deux copies de ALL-D font 0 point, car la défection mutuelle vaut
+0/0 et ALL-D ne gagne que 4 points contre TIT-FOR-TAT (un seul tour d'avance avant que la défection mutuelle s'installe).
+JOSS souffre aussi de ses échos de représailles (32 points contre une copie). Une stratégie qui trahit systématiquement ne
+bénéficie donc pas de son comportement, alors que la coopération conditionnelle de TIT-FOR-TAT reste avantageuse.
+
+Ces résultats ne signifient pas que TIT-FOR-TAT gagnerait dans toutes les variantes de ces jeux : ils décrivent les résultats de
+notre implémentation, avec les stratégies, les paramètres et les matrices de gains retenus.
+
+%==============================================================================
+\section{Vérifications et tests}
+%==============================================================================
+Nous avons écrit des tests pour vérifier plusieurs comportements importants :
+\begin{itemize}
+  \item les règles des stratégies, notamment les premiers coups et les réactions aux historiques et les valeurs du cours
+  (TIT-FOR-TAT contre ALL-D sur 10 tours donne 18 contre 23, le mini-tournoi donne 48 / 48 / 46) ;
+  \item le comportement probabiliste de RANDOM, JOSS et GENEROUS-TFT sur un grand nombre de tours ;
+  \item la reproductibilité des stratégies aléatoires avec une même graine ;
+  \item le fonctionnement de la comparaison avec et sans auto-jeu ;
+  \item les propriétés de la sélection, notamment la somme des proportions et l'absence de réapparition d'une proportion nulle.
+\end{itemize}
+La commande \texttt{python3 -m pytest -q} affiche \textbf{29 tests réussis} (capture en section~\ref{sec:captures}).
+
+%==============================================================================
+\section{Difficultés, choix et limites}
+%==============================================================================
+
+\subsection{Comprendre les stratégies avant de les programmer}
+La reprise du CM4 m'a aidée à distinguer les stratégies qui coopèrent, celles qui trahissent systématiquement et celles qui
+adaptent leur comportement à l'historique. TESTER et JOSS m'ont notamment demandé de bien réfléchir à la notion de réaction à
+l'adversaire, car leurs décisions dépendent de ce qui s'est passé pendant la partie.
+
+\subsection{Interpréter les résultats plutôt que regarder uniquement le classement}
+L'un des enseignements importants du projet est qu'un classement ne suffit pas à expliquer le comportement des stratégies.
+ALL-D gagne le tournoi de base sans auto-jeu, TIT-FOR-TAT gagne lorsque l'auto-jeu est autorisé, TESTER gagne dans la
+population élargie sans auto-jeu, tandis que TIT-FOR-TAT domine la sélection sur plusieurs générations dans les expériences
+réalisées. Ces résultats correspondent à des protocoles différents : il faut toujours préciser les paramètres et les règles
+avant d'interpréter un gagnant.
+
+\subsection{Limites de nos expériences}
+Nos résultats sont obtenus avec une graine déterminée (dont nous avons vérifié la stabilité sur 30 graines pour les gagnants),
+un nombre précis de parties et une population limitée. La sélection repose sur une matrice de scores calculée au départ et ne
+prévoit pas de mutation. Les résultats décrivent donc ce modèle particulier et non toutes les formes possibles d'évolution
+d'une population.
+
+%==============================================================================
+\section{Bilan personnel}
+%==============================================================================
+Ce projet nous a permis de passer des notions vues en cours à une expérimentation concrète. Nous avons pu observer que le
+comportement d'une stratégie ne peut pas être évalué indépendamment de ses adversaires et des règles du tournoi.
+
+Le résultat qui m'a le plus marquée est le changement de gagnant selon le protocole : ALL-D gagne le tournoi de base sans
+auto-jeu, TIT-FOR-TAT gagne lorsque l'auto-jeu est ajouté et TESTER arrive en tête lorsque la population est élargie. La
+sélection sur plusieurs générations donne encore une autre lecture, en faisant progressivement dominer TIT-FOR-TAT dans les
+expériences réalisées.
+
+L'ajout de GENEROUS-TFT et de TIT-FOR-TWO-TATS m'a également permis d'explorer deux façons de gérer les trahisons : pardonner
+avec une certaine probabilité ou attendre plusieurs trahisons avant de riposter. Les résultats de la sélection élargie montrent
+notamment que GENEROUS-TFT conserve une place importante dans la population.
+
+Enfin, ce travail m'a appris à ne pas m'arrêter au premier résultat obtenu. Il faut comprendre les règles de l'expérience,
+vérifier que le programme les applique correctement, comparer plusieurs configurations et expliquer les écarts observés. C'est
+cette démarche expérimentale que je retiens principalement de ce projet.
+
+%==============================================================================
+\clearpage % La partie des captures commence sur une nouvelle page.
+\section{Captures d'écran}\label{sec:captures}
+%==============================================================================
+Chaque capture correspond à une exécution réelle. La commande de lancement est
+présentée, puis la ou les captures correspondantes sont insérées juste en dessous.
+Les images sont placées dans le dossier \texttt{captures/}, à côté de ce fichier
+LaTeX.
+
+\medskip
+\textbf{1. Tournoi de base et comparaison avec/sans auto-jeu}
+{\footnotesize\begin{verbatim}
+python3 compare_auto_jeu.py --seed 42
+\end{verbatim}}
+\capture{1_COMPARE.png}
+
+\medskip
+\textbf{2. Tournoi avec la population élargie}
+{\footnotesize\begin{verbatim}
+python3 compare_auto_jeu.py --seed 42 --population etendue
+\end{verbatim}}
+\capture{2_POPULTATION_ELARGIE.png}
+
+\medskip
+\textbf{3. Sélection avec la population du cours}
+{\footnotesize\begin{verbatim}
+python3 selection.py --seed 42 --generations 100 --csv sel_cours.csv --png sel_cours.png
+\end{verbatim}}
+\capturesDeux{3_SELECTION_POP_COURS.png}{3_GRAPHIQUE_POP_COURS.png}
+
+\medskip
+\textbf{4. Sélection avec la population élargie}
+{\footnotesize\begin{verbatim}
+python3 selection.py --seed 42 --generations 100 --population etendue --png sel_etendue.png
+\end{verbatim}}
+\capturesDeux{4_SELECTION_POP_ELARGIE.png}{4_GRAP_SELECTION_POP_ELARGIE.png}
+
+\medskip
+\textbf{5. Sélection avec la chasse au cerf}
+{\footnotesize\begin{verbatim}
+python3 selection.py --seed 42 --generations 100 --gains cerf --png sel_cerf.png
+\end{verbatim}}
+\capturesDeux{5_CHASSE_CERF.png}{5_GRAPH_CHASSE_CERF.png}
+
+\medskip
+\textbf{6. Sélection avec la poule mouillée}
+{\footnotesize\begin{verbatim}
+python3 selection.py --seed 42 --generations 100 --gains poule --png sel_poule.png
+\end{verbatim}}
+\capturesDeux{6_POULE_MOUILLEE.png}{6_GRAPH_POULE_MOUILLEE.png}
+
+\medskip
+\textbf{7. Tests automatisés}
+{\footnotesize\begin{verbatim}
+python3 -m pytest -q
+\end{verbatim}}
+\capture{7_TESTS_AUTOMATISES.png}
+
+\end{document}
