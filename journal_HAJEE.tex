@@ -131,7 +131,10 @@ toujours C contre toujours C & (600, 600) & (600, 600) \\
 Une stratégie renvoyant \texttt{"X"} provoque bien l'erreur attendue. Les résultats obtenus correspondent aux valeurs
 attendues : la lecture de la matrice et le calcul des scores sont corrects.
 
-
+\subsubsection{}
+Lors de l'implémentation de jouer_match, après avoir relu le résultat de chaque partie dans la matrice des gains, en confondant les scores 
+d'une partie aves des coups. Le test "toujours C contre D" a provoqué une erreur (KeyError) au lieu du résultat attendu (0, 5000), ce qui 
+a permis de corriger la fonction immédiatement.
 \subsection{Tests}
 \subsection{Classement obtenu}
 \subsection{TFT gagne-t-il ?}
