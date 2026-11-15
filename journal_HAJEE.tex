@@ -6,6 +6,7 @@
 \geometry{margin=2.5cm}
 \usepackage{booktabs}
 \usepackage{listings}
+\usepackage{graphicx}
 
 \title{Journal de bord -- Projet 2 partie 1\\HAI716I}
 \author{Neha HAJEE}
@@ -186,9 +187,88 @@ graine 42 donnent exactement les mêmes scores, et la graine 7 donne des scores 
 %à faire : capture de la sortie des tests
 
 \subsection{Classement obtenu}
-%à faire après la fusion des branches : captures de python3 main.py et python3 main.py --auto-play
+Le tournoi officiel a été lancé avec les cinq stratégies du cours, au format d'Axelrod (5 parties de 200 tours par match),
+avec la graine 42 et sans auto play, à l'aide de la commande \texttt{python3 main.py}. Pour vérifier la reproductibilité, la
+commande a été lancée deux fois de suite (figure~\ref{fig:classement}).
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\linewidth]{captures/etape1_classement.png}
+  \caption{Deux lancements successifs de \texttt{python3 main.py} (graine 42) : le classement est identique.}
+  \label{fig:classement}
+\end{figure}
+
+\begin{center}
+\begin{tabular}{clc}
+\toprule
+Rang & Stratégie & Score total \\
+\midrule
+1 & ALL-D & 9482 \\
+2 & TIT-FOR-TAT & 9056 \\
+3 & TESTER & 8976 \\
+4 & JOSS & 8728 \\
+5 & RANDOM & 8477 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Les deux lancements donnent exactement les mêmes scores, ce qui confirme que la graine contrôle bien tout le hasard du
+tournoi. ALL-D termine premier, devant TIT-FOR-TAT. Les écarts restent faibles, environ 1000 points entre le premier et le
+dernier, soit moins de 12~\%.
 
 \subsection{TFT gagne-t-il ?}
+Avec ce protocole, TIT-FOR-TAT ne gagne pas, il termine deuxième derrière ALL-D. Pour comprendre ce résultat, le détail des
+matchs renvoyé par le moteur a été examiné.
+
+\begin{center}
+\begin{tabular}{lc}
+\toprule
+Match & Scores \\
+\midrule
+ALL-D contre RANDOM & 3440 -- 1040 \\
+ALL-D contre TIT-FOR-TAT & 2015 -- 1990 \\
+ALL-D contre TESTER & 2015 -- 1990 \\
+ALL-D contre JOSS & 2012 -- 1992 \\
+RANDOM contre TIT-FOR-TAT & 2497 -- 2487 \\
+RANDOM contre TESTER & 2572 -- 2452 \\
+RANDOM contre JOSS & 2368 -- 2593 \\
+TIT-FOR-TAT contre TESTER & 2500 -- 2500 \\
+TIT-FOR-TAT contre JOSS & 2079 -- 2104 \\
+TESTER contre JOSS & 2034 -- 2039 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+La victoire d'ALL-D vient presque entièrement de son match contre RANDOM, qui lui rapporte 3440 points. Contre les trois
+autres stratégies, qui ripostent toutes à la trahison, ALL-D ne prend qu'environ 25 points d'avance par match. Sans RANDOM,
+TIT-FOR-TAT passerait devant.
+
+La population est aussi trop petite et peu coopérative, comme l'indique la diapositive 69. TIT-FOR-TAT est la seule stratégie
+\og gentille \fg{}, c'est-à-dire qui ne trahit jamais en premier. TESTER trahit dès le premier tour, JOSS et RANDOM trahissent
+au hasard. Aucun match n'atteint donc la coopération complète (3000 points chacun), alors que c'est précisément ce qui faisait
+gagner TIT-FOR-TAT en 1980.
+
+Le détail montre également un effet d'écho. Contre TESTER, le score est exactement de 2500 partout. TESTER trahit au premier
+tour, TIT-FOR-TAT riposte, et les deux stratégies se renvoient ensuite la trahison en alternance, soit 2,5 points par tour en
+moyenne. Contre JOSS, chaque trahison au hasard déclenche de la même façon une chaîne de représailles. TIT-FOR-TAT ne gagne
+d'ailleurs aucun de ses matchs, il termine deuxième parce qu'il ne perd jamais de beaucoup.
+
+Enfin, le protocole diffère de celui de 1980. Le tournoi d'Axelrod comptait 14 participants, majoritairement gentils, et chaque
+stratégie affrontait aussi sa propre copie. En relançant le tournoi avec l'option \texttt{--auto-play}
+(figure~\ref{fig:autoplay}), TIT-FOR-TAT redevient premier avec 12042 points. Son match contre sa copie lui rapporte la
+coopération complète, alors qu'ALL-D ne gagne que 2 points par tour contre la sienne.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\linewidth]{captures/etape1_autoplay.png}
+  \caption{Tournoi sans auto play puis avec auto play (graine 42) : TIT-FOR-TAT passe de la deuxième à la première place.}
+  \label{fig:autoplay}
+\end{figure}
+
+Le résultat de 1980 n'est donc pas contredit, il dépend de la composition de la population et du protocole. Dans une population
+où la coopération est rare, une stratégie qui exploite les naïfs comme ALL-D peut l'emporter.
+%à vérifier avec Zéinab : même réponse dans les deux journaux et même règle de score en auto play
+
 
 \section{Étape 2 : nouvelle stratégie}
 
