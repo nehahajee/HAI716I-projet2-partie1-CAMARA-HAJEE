@@ -28,7 +28,7 @@ def test_tft_contre_alld_10_tours():
 
 
 def test_mini_tournoi_diapo_68():
-    """Diapo 68 : 2 TFT + 1 ALL-D, 10 tours
+    """Diapo 68 : 2 TFT + 1 ALL-D, 10 tours, SANS jeu contre soi-même.
     Totaux attendus : 48 / 48 / 46."""
     tft1, tft2, alld = TitForTat(), TitForTat(), AllD()
     rng = random.Random(0)
