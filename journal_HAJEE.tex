@@ -1,0 +1,108 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{booktabs}
+\usepackage{listings}
+
+\title{Journal de bord -- Projet 2 partie 1\\HAI716I}
+\author{Neha HAJEE}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{Organisation du binôme}
+L'énoncé indique un travail individuel, mais le professeur nous a autorisées oralement à travailler en binôme et à nous
+répartir les tâches comme nous le souhaitions. Le binôme est composé de Neha HAJEE et Zéinab CAMARA.
+
+Nous avons choisi de séparer le travail en deux parties qui communiquent par un contrat commun, la classe \texttt{Strategie} :
+\begin{itemize}
+  \item \textbf{Étape 0 (ensemble)} : définition de l'interface entre le moteur et les stratégies, et des décisions de protocole.
+  \item \textbf{Neha (moteur)} : le fichier \texttt{moteur.py}, c'est-à-dire une partie entre deux stratégies, le tournoi
+  tous contre tous, le calcul des scores, le classement, la gestion de la graine, ainsi que \texttt{main.py} et le README.
+  \item \textbf{Zéinab (stratégies)} : le fichier \texttt{strategies.py} avec les cinq stratégies du cours (ALL-D, RANDOM,
+  TIT-FOR-TAT, TESTER et JOSS), leurs tests à partir des valeurs du cours, et la question sur la victoire de TIT-FOR-TAT.
+  \item \textbf{Étapes 2 et 3} : chacune ajoute au moins une nouvelle stratégie et prend en charge une modification du tournoi.
+\end{itemize}
+
+Cette répartition nous permet de travailler en parallèle : tant que le contrat est respecté, le moteur n'a pas besoin de
+connaître le détail des stratégies, et les stratégies n'ont pas besoin de savoir comment le moteur fonctionne. Chacune tient
+son propre journal de bord, mais les décisions de protocole sont prises ensemble et sont identiques dans les deux journaux.
+
+\section{Étape 0 : contrat entre moteur et stratégies}
+\subsection{Interface de la classe Strategie}
+Après avoir remarqué que l'ensemble des stratégies avait la même forme, nous avons pris la décision de modéliser
+une classe mère \texttt{Strategie}. Le moteur peut donc les faire jouer sans savoir laquelle est en face. La classe \texttt{Strategie}
+contient un nom et deux méthodes : \texttt{reset} et \texttt{jouer}. Le nom est une chaîne de caractères afin de reconnaître chaque
+stratégie dans le classement. Il est obligatoire, nous ne lui avons pas donné de valeur par défaut.
+
+La méthode \texttt{reset} est appelée par le moteur au début de chaque partie. Elle sert aux stratégies qui ont une mémoire
+interne (comme TESTER ou JOSS) à effacer cette mémoire, afin que la partie précédente ne fausse pas la suivante. Elle contient
+le mot clé \texttt{pass}, car ne rien faire est un comportement par défaut correct pour les stratégies sans mémoire.
+
+La méthode \texttt{jouer} est appelée par le moteur à chaque tour. Elle reçoit la liste de ses propres coups, la liste des coups
+de l'adversaire et le générateur aléatoire \texttt{rng}, et renvoie le coup joué. Elle lève l'exception \texttt{NotImplementedError},
+car il n'existe pas de coup par défaut raisonnable : si une stratégie oublie de la redéfinir, le programme doit s'arrêter avec
+une erreur plutôt que de jouer un coup faux sans prévenir.
+
+Nous avons aussi reformulé la docstring de la classe : la phrase \og cette classe ne joue jamais contre elle-même \fg{} était
+ambiguë, car elle pouvait faire penser à la question de savoir si une stratégie affronte sa propre copie dans le tournoi.
+
+\subsection{Décisions de protocole}
+\paragraph{Paramètres imposés par l'énoncé.} Le tournoi suit le format d'Axelrod : chaque stratégie affronte chaque autre sur
+5 parties de 200 tours, et le meilleur score total gagne. Les gains sont ceux du cours : 3/3 si les deux coopèrent, 0/5 et 5/0
+si l'un trahit l'autre, 2/2 si les deux trahissent.
+
+\paragraph{Représentation des coups.} Un coup est représenté par la chaîne \texttt{"C"} ou \texttt{"D"}, comme dans le cours,
+ce qui rend les historiques faciles à lire et à afficher. L'historique est une liste triée du plus ancien au plus récent : le
+dernier coup de l'adversaire est donc le dernier élément de la liste. Les listes sont vides au premier tour, c'est ce qui
+permet à une stratégie de savoir qu'elle commence. Les listes appartiennent au moteur, les stratégies ne doivent pas les modifier.
+
+\paragraph{Hasard et graine.} Les stratégies qui ont besoin de hasard (RANDOM, JOSS) utilisent uniquement le générateur
+\texttt{rng} fourni par le moteur, jamais directement le module \texttt{random}. Ainsi, une seule graine contrôle tout le
+tournoi et les résultats peuvent être relancés à l'identique, comme l'exige l'énoncé. Graine choisie : 42.
+%à faire : tester d'autres graines pour vérifier que le classement ne dépend pas d'un hasard favorable
+
+\paragraph{Une stratégie joue-t-elle contre elle-même ?}
+Une stratégie ne joue pas contre elle-même, mais elle a le droit de jouer contre un autre joueur possédant la même stratégie.
+Nous avons préféré prendre cette décision pour ne pas avantager les stratégies coopératives : un match de TIT-FOR-TAT contre
+sa propre copie rapporterait 600 points par partie, contre 400 pour ALL-D. C'est aussi ce que fait le mini-tournoi du cours,
+où un joueur n'affronte jamais lui-même.
+
+\paragraph{TESTER : qu'est-ce qu'une riposte ?}
+Une riposte est une réponse à une trahison par une trahison. Nous regardons uniquement le coup de l'adversaire au tour 2,
+car c'est sa réponse directe à la trahison de TESTER au tour 1. Si ce coup est D, TESTER joue TIT-FOR-TAT pour le reste de la
+partie ; sinon, il répète C, C, D jusqu'à la fin. La décision est prise une seule fois et gardée pour toute la partie, ce qui
+suit la règle du cours mot pour mot et reste simple à tester. Limite : contre RANDOM, cette décision dépend d'un seul tirage
+au hasard, celui du tour 2.
+
+\paragraph{JOSS : \og une fois sur dix \fg{}, probabilité ou compteur ?}
+Chaque fois que JOSS devrait jouer C, il tire au sort et, avec 10~\% de chance, il joue D. Le nombre de trahisons varie, et le
+hasard passe par \texttt{rng}. Cette option correspond mieux à l'esprit d'un tricheur imprévisible.
+
+\paragraph{Ex aequo dans le classement.}
+Lorsque deux stratégies ont exactement le même score total, celle qui vient en premier dans l'ordre alphabétique est classée
+devant, afin de garantir un affichage stable d'une exécution à l'autre.
+
+\section{Étape 1 : tournoi de base}
+\subsection{Moteur}
+\subsection{Tests}
+\subsection{Classement obtenu}
+\subsection{TFT gagne-t-il ?}
+
+\section{Étape 2 : nouvelle stratégie}
+
+\section{Étape 3 : modification du tournoi}
+\subsection{Prédiction}
+\subsection{Résultats}
+\subsection{Analyse}
+
+\section{Difficultés rencontrées}
+
+\section{Bilan}
+
+\end{document}
