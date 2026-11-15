@@ -13,17 +13,21 @@ def main():
     parser.add_argument("--auto-play", action="store_true", help="Option de jouer contre soi même")
     parser.add_argument("--population", choices=["cours", "etendue"], default="cours",
                         help="cours : les 5 stratégies du cours, etendue : avec les stratégies ajoutées")
+    parser.add_argument("--bruit", type=float, default=0.0,
+                        help="probabilité d'inverser chaque coup (ex. 0.05), 0 = sans bruit")
     args = parser.parse_args()
+    if not 0 <= args.bruit <= 1:
+        parser.error("--bruit doit être compris entre 0 et 1")
 
     rng = random.Random(args.graine)
     population = population_etendue() if args.population == "etendue" else population_cours()
-    scores, matchs = tournoi(population, args.parties, args.tours, rng, args.auto_play)
+    scores, matchs = tournoi(population, args.parties, args.tours, rng, args.auto_play, bruit=args.bruit)
     resultat = classement(scores)
 
     print(f"Paramètres utilisés : population {args.population}, graine {args.graine}, {args.tours} tours, "
-          f"{args.parties} parties, auto play {'oui' if args.auto_play else 'non'}")
+          f"{args.parties} parties, auto play {'oui' if args.auto_play else 'non'}, bruit {args.bruit}")
     nom_fichier = (f"classement{'_etendue' if args.population == 'etendue' else ''}_graine{args.graine}"
-                   f"{'_autoplay' if args.auto_play else ''}.csv")
+                   f"{'_autoplay' if args.auto_play else ''}{f'_bruit{args.bruit}' if args.bruit > 0 else ''}.csv")
     with open(nom_fichier, "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(["rang", "strategie", "score"])

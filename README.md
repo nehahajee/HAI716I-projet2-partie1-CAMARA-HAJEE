@@ -55,6 +55,12 @@ Le classement s'affiche dans le terminal et est exporté dans un fichier CSV (`r
 
 Avec la même graine, deux lancements donnent exactement le même classement.
 
+Comparaison des classements avec et sans auto play :
+
+```
+python3 compare_auto_jeu.py
+```
+
 ## Tests
 
 ```
@@ -81,6 +87,21 @@ Le classement est exporté dans `classement_etendue_graine42.csv` (et `classemen
 Toutes les options de l'étape 1 (`--graine`, `--tours`, `--parties`) restent utilisables.
 
 ## Étape 3 : modifications du tournoi
+
+### Bruit
+
+Chaque coup est inversé (C devient D, D devient C) avec la probabilité donnée par `--bruit` :
+
+```
+python3 main.py --population etendue --bruit 0.05
+```
+
+| Option | Rôle | Valeur par défaut |
+|---|---|---|
+| `--bruit P` | probabilité d'inverser chaque coup, entre 0 et 1 | 0 (sans bruit) |
+
+Le classement est exporté dans `classement_etendue_graine42_bruit0.05.csv`. Avec `--bruit 0`, les résultats sont exactement
+ceux des étapes 1 et 2.
 
 ### Sélection et autres gains
 
@@ -110,5 +131,6 @@ Autres options : `--tours`, `--parties`, `--population cours|etendue`, `--csv` (
 - `main.py` : lancement du tournoi en ligne de commande
 - `gains.py` : matrices de gains (dilemme et autres jeux 2 × 2)
 - `selection.py` : tournoi évolutif (sélection)
-- `test_strategies.py`, `test_selection.py` : tests des stratégies et de la sélection
+- `compare_auto_jeu.py` : comparaison des classements avec et sans auto play
+- `test_moteur.py`, `test_strategies.py`, `test_selection.py`, `test_compare_auto_jeu.py` : tests
 - `journal_HAJEE`, `journal_CAMARA` : journaux de bord

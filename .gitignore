@@ -10,7 +10,13 @@ __pycache__/
 *.fls
 *.fdb_latexmk
 
+*.csv
+
 # environnement virtuel Python
 .venv/
 
 .DS_Store
+
+# outils locaux
+tectonic
+.vscode/

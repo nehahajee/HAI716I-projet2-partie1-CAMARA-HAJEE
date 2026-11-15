@@ -20,32 +20,27 @@
 L'énoncé indique un travail individuel, mais le travail en binôme a été autorisé oralement par le professeur, avec une
 répartition libre des tâches. Le binôme est composé de Neha HAJEE et Zéinab CAMARA.
 
-Le travail a été séparé en deux parties qui communiquent par un contrat commun, la classe \texttt{Strategie}.
-L'étape 0, c'est-à-dire la définition de l'interface entre le moteur et les stratégies et les décisions de protocole, a été
-faite ensemble. Pour l'étape 1, Neha HAJEE s'est chargée du moteur (\texttt{moteur.py}), qui comprend une partie entre deux
-stratégies, le tournoi tous contre tous, le calcul des scores, le classement et la gestion de la graine, ainsi que du lancement
-(\texttt{main.py}) et du README. Zéinab s'est chargée des stratégies (\texttt{strategies.py}), c'est-à-dire des cinq stratégies
-du cours (ALL-D, RANDOM, TIT-FOR-TAT, TESTER et JOSS), de leurs tests à partir des valeurs du cours et de la question sur la
-victoire de TIT-FOR-TAT. Pour les étapes 2 et 3, chacune ajoute au moins une nouvelle stratégie et prend en charge une
-modification du tournoi.
-
-Cette répartition permet de travailler en parallèle. Tant que le contrat est respecté, le moteur n'a pas besoin de connaître
-le détail des stratégies, et les stratégies n'ont pas besoin de savoir comment le moteur fonctionne. Chacune tient son propre
-journal de bord, mais les décisions de protocole sont prises ensemble et sont identiques dans les deux journaux.
+Le travail a été séparé en deux parties qui communiquent par un contrat commun, la classe \texttt{Strategie}. L'étape 0,
+c'est-à-dire l'interface entre le moteur et les stratégies et les décisions de protocole, a été faite ensemble. Pour l'étape 1,
+Neha HAJEE s'est chargée du moteur (\texttt{moteur.py}), qui comprend une partie entre deux stratégies, le tournoi tous contre
+tous, le calcul des scores, le classement et la gestion de la graine, ainsi que du lancement (\texttt{main.py}) et du README.
+Zéinab s'est chargée des cinq stratégies du cours (\texttt{strategies.py}), de leurs tests et de la question sur la victoire de
+TIT-FOR-TAT. Pour les étapes 2 et 3, chacune ajoute de nouvelles stratégies et prend en charge une modification du tournoi.
+Tant que le contrat est respecté, le moteur n'a pas besoin de connaître le détail des stratégies, ce qui permet de travailler
+en parallèle. Les décisions de protocole sont identiques dans les deux journaux.
 
 \section{Étape 0 -- Contrat entre moteur et stratégies}
 \subsection{Interface de la classe Strategie}
 Toutes les stratégies ayant la même forme, la décision a été prise de modéliser une classe mère \texttt{Strategie}. Le moteur
-peut donc les faire jouer sans savoir laquelle est en face. La classe contient un nom et deux méthodes, \texttt{reset} et
-\texttt{jouer}. Le nom est une chaîne de caractères qui permet de reconnaître chaque stratégie dans le classement. Il est
-obligatoire et n'a donc pas de valeur par défaut.
+peut donc les faire jouer sans savoir laquelle est en face. La classe contient un nom, obligatoire, qui permet de reconnaître
+chaque stratégie dans le classement, et deux méthodes, \texttt{reset} et \texttt{jouer}.
 
 La méthode \texttt{reset} est appelée par le moteur au début de chaque partie. Elle permet aux stratégies qui ont une mémoire
-interne d'effacer cette mémoire, afin que la partie précédente ne fausse pas la suivante. Elle contient seulement le mot clé
-\texttt{pass}, car ne rien faire est un comportement par défaut correct pour les stratégies sans mémoire.
+interne d'effacer cette mémoire, afin que la partie précédente ne fausse pas la suivante. Par défaut, elle ne fait rien
+(\texttt{pass}), ce qui convient aux stratégies sans mémoire.
 
-La méthode \texttt{jouer} est appelée par le moteur à chaque tour. Elle reçoit la liste de ses propres coups, la liste des coups
-de l'adversaire et le générateur aléatoire \texttt{rng}, et renvoie le coup joué. Elle lève l'exception
+La méthode \texttt{jouer} est appelée à chaque tour. Elle reçoit la liste de ses propres coups, la liste des coups de
+l'adversaire et le générateur aléatoire \texttt{rng}, et renvoie le coup joué. Elle lève l'exception
 \texttt{NotImplementedError}, car il n'existe pas de coup par défaut raisonnable. Si une stratégie oublie de la redéfinir, le
 programme doit s'arrêter avec une erreur plutôt que de jouer un coup faux sans prévenir.
 
@@ -54,67 +49,57 @@ programme doit s'arrêter avec une erreur plutôt que de jouer un coup faux sans
 5 parties de 200 tours, et le meilleur score total gagne. Les gains sont ceux du cours, 3/3 si les deux coopèrent, 0/5 et 5/0
 si l'un trahit l'autre, 2/2 si les deux trahissent.
 
-\paragraph{Représentation des coups.} Un coup est représenté par la chaîne \texttt{"C"} ou \texttt{"D"}, comme dans le cours,
-ce qui rend les historiques faciles à lire et à afficher. L'historique est une liste triée du plus ancien au plus récent, le
-dernier coup de l'adversaire est donc le dernier élément de la liste. Les listes sont vides au premier tour, ce qui permet à une
-stratégie de savoir qu'elle commence. Les listes appartiennent au moteur et les stratégies ne doivent pas les modifier.
+\paragraph{Représentation des coups.} Un coup est représenté par la chaîne \texttt{"C"} ou \texttt{"D"}, comme dans le cours.
+L'historique est une liste triée du plus ancien au plus récent, et il est vide au premier tour, ce qui permet à une stratégie
+de savoir qu'elle commence. Les listes appartiennent au moteur et les stratégies ne doivent pas les modifier.
 
 \paragraph{Hasard et graine.} Les stratégies qui ont besoin de hasard (RANDOM, JOSS) utilisent uniquement le générateur
 \texttt{rng} fourni par le moteur, jamais directement le module \texttt{random}. Une seule graine, fixée à 42, contrôle ainsi
 tout le tournoi, et les résultats peuvent être relancés à l'identique, comme l'exige l'énoncé.
 
 \paragraph{Une stratégie joue-t-elle contre elle-même ?}
-Une stratégie ne joue pas contre elle-même, mais elle a le droit de jouer contre un autre joueur possédant la même stratégie.
-Cette décision a été prise pour ne pas avantager les stratégies coopératives, car un match de TIT-FOR-TAT contre sa propre copie
-rapporterait 600 points par partie, contre 400 pour ALL-D. C'est aussi ce que fait le mini-tournoi du cours, où un joueur
-n'affronte jamais lui-même. Le moteur propose toutefois une option \texttt{--auto-play} qui active ces matchs, afin de pouvoir
-comparer avec le tournoi d'Axelrod de 1980, où chaque stratégie affrontait aussi sa propre copie.
+Par défaut, une stratégie n'affronte pas sa propre copie. Cette décision a été prise pour ne pas avantager les stratégies
+coopératives, car un match de TIT-FOR-TAT contre sa copie rapporterait 600 points par partie, contre 400 pour ALL-D. C'est aussi
+ce que fait le mini-tournoi du cours. Le moteur propose toutefois une option \texttt{--auto-play} qui active ces matchs, afin
+de pouvoir comparer avec le tournoi d'Axelrod de 1980, où chaque stratégie affrontait aussi sa propre copie.
 
 \paragraph{TESTER, qu'est-ce qu'une riposte ?}
-Une riposte est une réponse à une trahison par une trahison. Seul le coup de l'adversaire au tour 2 est pris en compte, car
-c'est sa réponse directe à la trahison de TESTER au tour 1. Si ce coup est D, TESTER joue TIT-FOR-TAT pour le reste de la
-partie, sinon il répète C, C, D jusqu'à la fin. La décision est prise une seule fois et gardée pour toute la partie, ce qui
-suit la règle du cours mot pour mot et reste simple à tester. Ce choix a une limite, puisque contre RANDOM la décision dépend
-d'un seul tirage au hasard, celui du tour 2.
+Seul le coup de l'adversaire au tour 2 est pris en compte, car c'est sa réponse directe à la trahison de TESTER au tour 1. Si
+ce coup est D, TESTER joue TIT-FOR-TAT pour le reste de la partie, sinon il répète C, C, D jusqu'à la fin. La décision est
+prise une seule fois, ce qui suit la règle du cours mot pour mot. Ce choix a une limite, puisque contre RANDOM la décision
+dépend d'un seul tirage au hasard.
 
 \paragraph{JOSS, \og une fois sur dix \fg{}, probabilité ou compteur ?}
-Chaque fois que JOSS devrait jouer C, il tire au sort et joue D avec une probabilité de 10~\%. Le nombre de trahisons varie
-donc d'une partie à l'autre, et le hasard passe par \texttt{rng}. Cette option correspond mieux à l'esprit d'un tricheur
-imprévisible qu'un compteur régulier.
+Chaque fois que JOSS devrait jouer C, il joue D avec une probabilité de 10~\%, tirée avec \texttt{rng}. Cette option
+correspond mieux à l'esprit d'un tricheur imprévisible qu'un compteur régulier.
 
 \paragraph{Ex aequo dans le classement.}
-Lorsque deux stratégies ont exactement le même score total, celle qui vient en premier dans l'ordre alphabétique est classée
-devant, afin de garantir un affichage stable d'une exécution à l'autre.
+À score égal, la stratégie qui vient en premier dans l'ordre alphabétique est classée devant, afin de garantir un affichage
+stable d'une exécution à l'autre.
 
 \section{Étape 1 -- Tournoi de base}
 \subsection{Moteur}
-\paragraph{Objectif.} Le moteur doit faire jouer une partie entre deux stratégies, puis un tournoi tous contre tous, sans
-connaître le détail des stratégies. Il ne passe que par les méthodes \texttt{reset} et \texttt{jouer} définies à l'étape 0.
-
-\paragraph{Matrice des gains.} Elle est représentée par un dictionnaire dont la clé est le couple de coups (coup du joueur 1,
-coup du joueur 2) et la valeur le couple de gains correspondant. Par exemple, \texttt{("C", "D")} donne \texttt{(0, 5)}. Le
-gain d'un tour s'obtient ainsi en une seule lecture.
-
-\paragraph{Déroulement d'une partie.} La fonction \texttt{jouer\_partie} remet les deux stratégies à zéro avec \texttt{reset},
-puis, à chaque tour, demande son coup à chaque stratégie, vérifie ces coups, les ajoute aux historiques et ajoute les gains
-aux scores. Elle renvoie les deux scores de la partie.
+\paragraph{Déroulement d'une partie.} La fonction \texttt{jouer\_partie} ne passe que par les méthodes \texttt{reset} et
+\texttt{jouer} définies à l'étape 0. Elle remet les deux stratégies à zéro, puis, à chaque tour, demande son coup à chaque
+stratégie, vérifie ces coups, les ajoute aux historiques et ajoute les gains aux scores. La matrice des gains est un
+dictionnaire dont la clé est le couple de coups et la valeur le couple de gains, par exemple \texttt{("C", "D")} donne
+\texttt{(0, 5)}, si bien que le gain d'un tour s'obtient en une seule lecture.
 
 \paragraph{Choix de conception.} Trois choix ont été faits lors de l'écriture de \texttt{jouer\_partie}. Le premier concerne la
 simultanéité des coups. Les deux coups sont demandés avant d'être ajoutés aux historiques, si bien qu'aucune stratégie ne peut
-voir le coup de l'adversaire du tour en cours. Cela respecte la règle de l'énoncé, selon laquelle les deux joueurs choisissent
-\og en même temps \fg{}.
+voir le coup de l'adversaire du tour en cours, ce qui respecte la règle de l'énoncé selon laquelle les deux joueurs
+choisissent \og en même temps \fg{}.
 
-Le deuxième choix est la copie des historiques. Chaque stratégie reçoit une copie des listes et non les listes du moteur.
-Une stratégie qui modifierait sa liste par erreur ne peut donc pas fausser la partie. Le moteur fait ainsi respecter le contrat
-de l'étape 0 au lieu de simplement faire confiance aux stratégies.
+Le deuxième choix est la copie des historiques. Chaque stratégie reçoit une copie des listes et non les listes du moteur. Une
+stratégie qui modifierait sa liste par erreur ne peut donc pas fausser la partie. Le moteur fait ainsi respecter le contrat de
+l'étape 0 au lieu de simplement faire confiance aux stratégies.
 
 Le troisième choix est la vérification des coups. Si une stratégie renvoie autre chose que \texttt{"C"} ou \texttt{"D"}, le
-moteur lève une erreur (\texttt{ValueError}) dont le message donne le nom de la stratégie et le coup reçu. Sans cette
-vérification, le programme planterait plus loin, lors de la lecture des gains, avec un message beaucoup moins clair.
+moteur lève une erreur (\texttt{ValueError}) qui donne le nom de la stratégie et le coup reçu. Sans cette vérification, le
+programme planterait plus loin, lors de la lecture des gains, avec un message beaucoup moins clair.
 
-\paragraph{Vérification.} Pour contrôler \texttt{jouer\_partie} avant que les stratégies du cours soient écrites, la fonction a
-été lancée sur 200 tours avec deux stratégies très simples, l'une jouant toujours C et l'autre toujours D, dont les scores se
-calculent à la main.
+\paragraph{Vérification.} Avant que les stratégies du cours soient écrites, \texttt{jouer\_partie} a été lancée sur 200 tours
+avec deux stratégies très simples, l'une jouant toujours C et l'autre toujours D, dont les scores se calculent à la main.
 \begin{center}
 \begin{tabular}{lcc}
 \toprule
@@ -126,40 +111,29 @@ toujours C contre toujours C & (600, 600) & (600, 600) \\
 \bottomrule
 \end{tabular}
 \end{center}
-Les résultats obtenus correspondent aux valeurs attendues, la lecture de la matrice et le calcul des scores sont donc
-corrects. Une stratégie renvoyant \texttt{"X"} provoque bien l'erreur attendue.
+Les résultats correspondent aux valeurs attendues, et une stratégie renvoyant \texttt{"X"} provoque bien l'erreur prévue.
 
-\paragraph{Match.} La fonction \texttt{jouer\_match} fait jouer deux stratégies sur plusieurs parties (5 au format d'Axelrod)
-et additionne les scores de chaque partie. Elle n'a pas besoin d'appeler \texttt{reset}, puisque \texttt{jouer\_partie} le
-fait déjà au début de chaque partie, ce qui garantit que les parties sont indépendantes.
-
-\paragraph{Tournoi.} La fonction \texttt{tournoi} crée un score total à 0 pour chaque stratégie, puis fait jouer un match à
-chaque paire de stratégies et ajoute les points obtenus au total de chacune. Les paires sont générées avec
-\texttt{itertools.combinations}. Ainsi, chaque paire ne se rencontre qu'une seule fois (A contre B, mais pas en plus B contre
-A), et aucune stratégie n'affronte elle-même. La fonction renvoie aussi le détail de chaque match, qui sert à expliquer le
-classement en montrant contre qui une stratégie gagne ou perd des points.
+\paragraph{Match et tournoi.} La fonction \texttt{jouer\_match} additionne les scores de 5 parties. Elle n'appelle pas
+\texttt{reset}, puisque \texttt{jouer\_partie} le fait déjà, ce qui garantit que les parties sont indépendantes. La fonction
+\texttt{tournoi} fait jouer un match à chaque paire de stratégies, générée avec \texttt{itertools.combinations}, si bien que
+chaque paire ne se rencontre qu'une fois et qu'aucune stratégie n'affronte elle-même. Elle renvoie les scores totaux et le
+détail de chaque match, qui sert à expliquer le classement en montrant contre qui une stratégie gagne ou perd des points.
 
 \paragraph{Option auto play.} Lorsque l'option est activée, les paires sont générées avec
 \texttt{itertools.combinations\_with\_replacement}, qui ajoute les paires (A, A). Deux points ont demandé une attention
-particulière. D'abord, si le même objet jouait des deux côtés, les stratégies qui ont une mémoire interne partageraient cette
-mémoire entre les deux joueurs. Le second joueur est donc une copie indépendante, créée avec \texttt{copy.deepcopy}.
+particulière. D'abord, si le même objet jouait des deux côtés, les stratégies qui ont une mémoire interne la partageraient entre
+les deux joueurs. Le second joueur est donc une copie indépendante, créée avec \texttt{copy.deepcopy}. Ensuite, dans un match
+A contre A, seul le score d'un des deux joueurs est ajouté, sinon la stratégie recevrait les points de deux joueurs. Ce choix a
+une limite, car pour une stratégie aléatoire (RANDOM, JOSS), les deux copies n'obtiennent pas le même score.
 
-Ensuite, dans un match A contre A, les deux scores reviennent au même nom. Seul le score d'un des deux joueurs est ajouté,
-sinon la stratégie recevrait les points de deux joueurs. Ce choix a une limite. Pour une stratégie aléatoire (RANDOM, JOSS),
-les deux copies n'obtiennent pas le même score, et ce choix revient à garder l'une des deux.
+\paragraph{Classement et lancement.} La fonction \texttt{classement} trie sur le couple (score négatif, nom), ce qui donne
+l'ordre décroissant pour le score et l'ordre alphabétique pour les ex aequo. Le tournoi se lance avec
+\texttt{python3 main.py}, dont les options (\texttt{--graine}, \texttt{--tours}, \texttt{--parties}, \texttt{--auto-play}) ont
+pour valeurs par défaut celles du protocole. Le générateur aléatoire est créé une seule fois à partir de la graine. Le
+classement est affiché et exporté dans un fichier CSV dont le nom contient la graine, pour garder une trace de chaque lancement.
 
-\paragraph{Classement.} La fonction \texttt{classement} trie les stratégies par score total décroissant, puis par ordre
-alphabétique en cas d'égalité, comme décidé à l'étape 0. Le tri se fait sur le couple (score négatif, nom). Le signe moins
-permet d'obtenir l'ordre décroissant pour le score tout en gardant l'ordre alphabétique croissant pour le nom.
-
-\paragraph{Lancement (\texttt{main.py}).} Le tournoi se lance avec \texttt{python3 main.py}. Les options \texttt{--graine},
-\texttt{--tours}, \texttt{--parties} et \texttt{--auto-play} ont pour valeurs par défaut celles du protocole. Le générateur
-aléatoire est créé une seule fois à partir de la graine, puis transmis à tout le tournoi. Le classement est affiché avec les
-paramètres utilisés et exporté dans un fichier CSV dont le nom contient la graine, afin de garder une trace de chaque lancement
-sans écraser les précédents.
-
-\paragraph{Vérification du tournoi.} Le tournoi a été lancé avec trois stratégies simples, deux stratégies jouant toujours C
-(C1 et C2) et une jouant toujours D, sur 5 parties de 200 tours.
+\paragraph{Vérification du tournoi.} Le tournoi a été lancé avec deux stratégies jouant toujours C (C1 et C2) et une jouant
+toujours D, sur 5 parties de 200 tours.
 \begin{center}
 \begin{tabular}{lcccc}
 \toprule
@@ -172,25 +146,22 @@ Avec auto play (obtenu) & 6 & 6000 & 6000 & 12\,000 \\
 \bottomrule
 \end{tabular}
 \end{center}
-Sans auto play, D bat C1 et C2 (5000 points chacun) et C1 et C2 coopèrent entre eux (3000 chacun). Avec auto play, chaque
-stratégie gagne en plus son match contre sa copie, 3000 pour C1 et C2, mais seulement 2000 pour D. Ce résultat montre déjà que
-l'auto play avantage les stratégies coopératives. Pour le classement, des scores fictifs (TFT 9900, ALL-D 9500, JOSS 9000,
-AAA 9000) donnent bien l'ordre TFT, ALL-D, AAA, JOSS, trié par score puis par ordre alphabétique pour les ex aequo. Enfin, deux
-tournois lancés avec la graine 42 donnent exactement les mêmes scores, et la graine 7 donne des scores différents, ce qui
-montre que les résultats sont reproductibles.
+Avec auto play, C1 et C2 gagnent 3000 points de plus contre leur copie, et D seulement 2000, ce qui montre déjà que l'auto play
+avantage les stratégies coopératives. Des scores fictifs (TFT 9900, ALL-D 9500, JOSS 9000, AAA 9000) donnent bien l'ordre TFT,
+ALL-D, AAA, JOSS. Enfin, deux tournois lancés avec la graine 42 donnent les mêmes scores, et la graine 7 des scores différents.
 
 \subsection{Tests}
 %les tests des stratégies sont décrits dans le journal de Zéinab
 %à faire : capture de la sortie des tests
 
 \subsection{Classement obtenu}
-Le tournoi officiel a été lancé avec les cinq stratégies du cours, au format d'Axelrod (5 parties de 200 tours par match),
-avec la graine 42 et sans auto play, à l'aide de la commande \texttt{python3 main.py}. Pour vérifier la reproductibilité, la
-commande a été lancée deux fois de suite (figure~\ref{fig:classement}).
+Le tournoi officiel a été lancé avec les cinq stratégies du cours, au format d'Axelrod, avec la graine 42 et sans auto play
+(\texttt{python3 main.py}). La commande a été lancée deux fois de suite pour vérifier la reproductibilité
+(figure~\ref{fig:classement}).
 
 \begin{figure}[h]
   \centering
-  \includegraphics[width=\linewidth]{captures/etape1_classement.png}
+  \includegraphics[width=0.55\linewidth]{captures/etape1_classement.png}
   \caption{Deux lancements successifs de \texttt{python3 main.py} (graine 42), le classement est identique.}
   \label{fig:classement}
 \end{figure}
@@ -209,9 +180,8 @@ Rang & Stratégie & Score total \\
 \end{tabular}
 \end{center}
 
-Les deux lancements donnent exactement les mêmes scores, ce qui confirme que la graine contrôle bien tout le hasard du
-tournoi. ALL-D termine premier, devant TIT-FOR-TAT. Les écarts restent faibles, environ 1000 points entre le premier et le
-dernier, soit moins de 12~\%.
+Les deux lancements donnent exactement les mêmes scores. ALL-D termine premier, devant TIT-FOR-TAT, avec des écarts faibles,
+moins de 12~\% entre le premier et le dernier.
 
 \subsection{TFT gagne-t-il ?}
 Avec ce protocole, TIT-FOR-TAT ne gagne pas, il termine deuxième derrière ALL-D. Pour comprendre ce résultat, le détail des
@@ -241,24 +211,23 @@ autres stratégies, qui ripostent toutes à la trahison, ALL-D ne prend qu'envir
 TIT-FOR-TAT passerait devant.
 
 La population est aussi trop petite et peu coopérative, comme l'indique la diapositive 69. TIT-FOR-TAT est la seule stratégie
-\og gentille \fg{}, c'est-à-dire qui ne trahit jamais en premier. TESTER trahit dès le premier tour, JOSS et RANDOM trahissent
-au hasard. Aucun match n'atteint donc la coopération complète (3000 points chacun), alors que c'est précisément ce qui faisait
-gagner TIT-FOR-TAT en 1980.
+\og gentille \fg{}, c'est-à-dire qui ne trahit jamais en premier. Aucun match n'atteint donc la coopération complète (3000
+points chacun), alors que c'est précisément ce qui faisait gagner TIT-FOR-TAT en 1980.
 
 Le détail montre également un effet d'écho. Contre TESTER, le score est exactement de 2500 partout. TESTER trahit au premier
 tour, TIT-FOR-TAT riposte, et les deux stratégies se renvoient ensuite la trahison en alternance, soit 2,5 points par tour en
 moyenne. Contre JOSS, chaque trahison au hasard déclenche de la même façon une chaîne de représailles. TIT-FOR-TAT ne gagne
 d'ailleurs aucun de ses matchs, il termine deuxième parce qu'il ne perd jamais de beaucoup.
 
-Enfin, le protocole diffère de celui de 1980. Le tournoi d'Axelrod comptait 14 participants, majoritairement gentils, et chaque
-stratégie affrontait aussi sa propre copie. En relançant le tournoi avec l'option \texttt{--auto-play}
-(figure~\ref{fig:autoplay}), TIT-FOR-TAT redevient premier avec 12042 points. Son match contre sa copie lui rapporte la
-coopération complète, alors qu'ALL-D ne gagne que 2 points par tour contre la sienne.
+Enfin, le tournoi d'Axelrod de 1980 comptait 14 participants, majoritairement gentils, et chaque stratégie affrontait aussi sa
+propre copie. Avec l'option \texttt{--auto-play} (figure~\ref{fig:autoplay}), TIT-FOR-TAT redevient premier avec 12042
+points, car son match contre sa copie lui rapporte la coopération complète, alors qu'ALL-D ne gagne que 2 points par tour
+contre la sienne.
 
 \begin{figure}[h]
   \centering
-  \includegraphics[width=\linewidth]{captures/etape1_autoplay.png}
-  \caption{Tournoi sans auto play puis avec auto play (graine 42). TIT-FOR-TAT passe de la deuxième à la première place.}
+  \includegraphics[width=0.55\linewidth]{captures/etape1_autoplay.png}
+  \caption{Tournoi sans puis avec auto play (graine 42). TIT-FOR-TAT passe de la deuxième à la première place.}
   \label{fig:autoplay}
 \end{figure}
 
@@ -269,29 +238,22 @@ où la coopération est rare, une stratégie qui exploite les naïfs comme ALL-D
 
 \section{Étape 2 -- Nouvelles stratégies}
 \subsection{Choix des stratégies}
-L'énoncé demande d'ajouter au moins une stratégie absente du cours, de la documenter et de prédire son comportement avant de
-lancer le tournoi. Deux stratégies ont été choisies, PAVLOV et GRADUAL, qui n'apparaissent pas dans les diapositives. Elles
-répondent chacune à un défaut de TIT-FOR-TAT mis en évidence à l'étape 1, l'effet d'écho, où une seule trahison suffit à
-lancer une chaîne de représailles dont TIT-FOR-TAT ne sort pas seul. PAVLOV corrige ce défaut par une règle sans mémoire qui
-permet de revenir à la coopération après une erreur, GRADUAL par une punition proportionnée suivie d'une phase d'apaisement.
-Les deux stratégies sont \og gentilles \fg{} au sens de la diapositive 69, puisqu'elles coopèrent au premier tour et ne
-trahissent jamais en premier. Elles sont ajoutées dans \texttt{strategies.py} et dans la fonction
-\texttt{population\_etendue()}, qui reprend les cinq stratégies du cours et les stratégies ajoutées par le binôme.
-
-Les prédictions ci-dessous ont été écrites avant de lancer le tournoi avec la population étendue. Elles reposent uniquement sur
-les règles des stratégies et sur des séquences de coups déroulées à la main avec la matrice de l'énoncé ($T=5$, $R=3$, $P=2$,
-$S=0$).
+L'énoncé demande d'ajouter au moins deux stratégies absentes du cours. PAVLOV et GRADUAL ont été choisies parce qu'elles
+répondent chacune au défaut de TIT-FOR-TAT mis en évidence à l'étape 1, l'effet d'écho. PAVLOV le corrige par une règle sans
+mémoire qui permet de revenir à la coopération après une erreur, GRADUAL par une punition proportionnée suivie d'une phase
+d'apaisement. Les deux sont \og gentilles \fg{}, puisqu'elles coopèrent au premier tour et ne trahissent jamais en premier. Elles
+sont ajoutées dans \texttt{strategies.py} et dans \texttt{population\_etendue()}, qui reprend les cinq stratégies du cours et
+les stratégies ajoutées par le binôme. Les prédictions ci-dessous ont été écrites avant de lancer le tournoi, à partir de
+séquences de coups déroulées à la main avec la matrice de l'énoncé ($T=5$, $R=3$, $P=2$, $S=0$).
 
 \subsection{PAVLOV}
 \paragraph{Origine.} PAVLOV, aussi appelée \og win-stay, lose-shift \fg{}, a été décrite par Kraines et Kraines en 1988, puis
 popularisée par Nowak et Sigmund en 1993, qui ont montré dans des simulations évolutives avec erreurs qu'elle finissait par
-supplanter TIT-FOR-TAT. Son nom fait référence au conditionnement, un comportement récompensé est répété et un comportement
-puni est abandonné.
+supplanter TIT-FOR-TAT.
 
 \paragraph{Règle.} PAVLOV coopère au premier tour. Ensuite, si le dernier tour lui a bien rapporté ($T=5$ ou $R=3$), elle
 rejoue le même coup, et s'il lui a mal rapporté ($S=0$ ou $P=2$), elle change de coup. Avec la matrice de l'énoncé, les quatre
-cas du tableau suivant se résument à une règle très simple. PAVLOV coopère si les deux joueurs ont joué le même coup au tour
-précédent et trahit sinon.
+cas se résument à une règle simple. PAVLOV coopère si les deux joueurs ont joué le même coup au tour précédent et trahit sinon.
 
 \begin{center}
 \begin{tabular}{ccccc}
@@ -307,85 +269,68 @@ D & D & 2 & mauvais, changer & C \\
 \end{center}
 
 \paragraph{Implémentation.} La règle n'utilise que le dernier coup de chaque joueur. PAVLOV n'a donc besoin d'aucune mémoire
-propre, tout se lit dans les deux historiques fournis par le moteur, et la méthode \texttt{reset} de la classe mère suffit. Au
-premier tour, les historiques sont des listes vides, ce qui est testé par \texttt{if not coups\_personnels}.
+propre, tout se lit dans les historiques fournis par le moteur, et le \texttt{reset} de la classe mère suffit.
 
 \paragraph{Contre qui PAVLOV devrait bien jouer.} Son point fort est la correction des erreurs entre stratégies qui lui
-ressemblent. Si deux PAVLOV coopèrent et que l'une trahit par erreur, le tour suivant est (D, C). Les deux coups diffèrent,
-donc les deux joueurs trahissent, puis (D, D) les ramène tous les deux à C. La coopération est rétablie en deux tours, alors
-que deux TIT-FOR-TAT se renverraient la trahison indéfiniment. Contre toutes les stratégies gentilles de la population étendue,
-PAVLOV devrait obtenir la coopération complète, soit 3 points par tour. Elle sait aussi exploiter un adversaire qui ne riposte
+ressemblent. Si deux PAVLOV coopèrent et que l'une trahit par erreur, le tour suivant est (D, D), puis les deux reviennent à
+C. La coopération est rétablie en deux tours, alors que deux TIT-FOR-TAT se renverraient la trahison indéfiniment. Contre les
+stratégies gentilles, PAVLOV devrait obtenir la coopération complète. Elle sait aussi exploiter un adversaire qui ne riposte
 pas, car si une trahison lui rapporte 5, elle continue à trahir.
 
-\paragraph{Contre qui PAVLOV devrait mal jouer.} Contre ALL-D, PAVLOV alterne C et D. Après (C, D) elle change et joue D, après
-(D, D) elle change encore et rejoue C. Elle gagne donc $(0+2)/2 = 1$ point par tour en moyenne, deux fois moins que
-TIT-FOR-TAT qui gagne 2 points par tour en trahissant en continu. Contre une stratégie de la famille de TIT-FOR-TAT qui l'a
-trahie, la correction d'erreur ne fonctionne pas. Le déroulement à la main contre TESTER donne un cycle de trois tours,
-(C, D), (D, C), (D, D), soit $(0+5+2)/3 \approx 2{,}33$ points par tour pour chacun, moins que les 2,5 points obtenus par
-TIT-FOR-TAT contre TESTER. Le même cycle devrait apparaître contre JOSS à chaque trahison au hasard. Enfin, contre RANDOM, la
-règle de PAVLOV n'a aucune prise, puisque l'adversaire ne réagit pas à ses coups.
+\paragraph{Contre qui PAVLOV devrait mal jouer.} Contre ALL-D, PAVLOV alterne C et D, car après (C, D) elle change et après
+(D, D) elle change encore. Elle gagne donc 1 point par tour en moyenne, deux fois moins que TIT-FOR-TAT. Contre TESTER, le
+déroulement à la main donne un cycle de trois tours, (C, D), (D, C), (D, D), soit 2,33 points par tour pour chacun, moins que
+les 2,5 points de TIT-FOR-TAT contre TESTER. Le même cycle devrait apparaître contre JOSS à chaque trahison au hasard.
 
-\paragraph{Prédiction.} La force de PAVLOV, se réconcilier avec une stratégie qui lui ressemble, est peu utile dans cette
-population, où elle n'a pas de copie sans auto play, alors que ses faiblesses face à ALL-D, TESTER et JOSS y sont présentes.
-La prédiction est donc que PAVLOV terminera dans la seconde moitié du classement, derrière TIT-FOR-TAT, et qu'elle gagnerait
-des places si la population contenait plus de stratégies gentilles.
+\paragraph{Prédiction.} La force de PAVLOV est peu utile dans cette population, où elle n'a pas de copie sans auto play, alors
+que ses faiblesses face à ALL-D, TESTER et JOSS y sont présentes. PAVLOV devrait donc terminer dans la seconde moitié du
+classement, derrière TIT-FOR-TAT, et gagner des places si la population contenait plus de stratégies gentilles.
 
 \subsection{GRADUAL}
 \paragraph{Origine.} GRADUAL a été proposée par Beaufils, Delahaye et Mathieu en 1996, à l'université de Lille, comme une
-amélioration de TIT-FOR-TAT. Dans leurs tournois, elle battait TIT-FOR-TAT, en particulier grâce à une punition plus adaptée au
-comportement de l'adversaire.
+amélioration de TIT-FOR-TAT, qu'elle battait dans leurs tournois.
 
 \paragraph{Règle.} GRADUAL coopère tant que l'adversaire coopère. Lorsque l'adversaire trahit pour la $n$-ième fois depuis le
-début de la partie, GRADUAL trahit $n$ fois de suite, puis coopère deux fois pour \og calmer le jeu \fg{}, et revient ensuite à
-la coopération normale. Une première trahison est donc punie par un seul D, mais un adversaire qui trahit souvent reçoit des
-punitions de plus en plus longues.
+début de la partie, GRADUAL trahit $n$ fois de suite, puis coopère deux fois pour \og calmer le jeu \fg{}. Une première
+trahison est donc punie par un seul D, mais un adversaire qui trahit souvent reçoit des punitions de plus en plus longues.
 
-\paragraph{Implémentation.} Contrairement à PAVLOV, GRADUAL doit se souvenir de la punition en cours, qui s'étale sur plusieurs
-tours. Cette mémoire est rangée dans l'attribut \texttt{self.plan}, la liste des coups qu'il reste à jouer. Quand l'adversaire
-vient de trahir et qu'aucune punition n'est en cours, le plan devient \texttt{[D] * n + [C, C]}, où $n$ est le nombre de D dans
-l'historique adverse, et chaque tour retire le premier coup du plan. La méthode \texttt{reset} vide le plan au début de chaque
-partie, ce qui justifie la présence de \texttt{reset} dans le contrat de l'étape 0. Sans elle, une punition commencée à la fin
-d'une partie se poursuivrait au début de la suivante. Une trahison adverse pendant la punition ou l'apaisement ne déclenche pas
-de nouvelle punition immédiate, mais elle est comptée dans $n$ pour la punition suivante.
+\paragraph{Implémentation.} Contrairement à PAVLOV, GRADUAL doit se souvenir de la punition en cours. Cette mémoire est rangée
+dans l'attribut \texttt{self.plan}, la liste des coups qu'il reste à jouer. Quand l'adversaire vient de trahir et qu'aucune
+punition n'est en cours, le plan devient \texttt{[D] * n + [C, C]}, et chaque tour retire le premier coup du plan. La méthode
+\texttt{reset} vide le plan au début de chaque partie, ce qui justifie sa présence dans le contrat de l'étape 0. Sans elle, une
+punition commencée à la fin d'une partie se poursuivrait au début de la suivante.
 
-\paragraph{Contre qui GRADUAL devrait bien jouer.} Contre les stratégies gentilles, GRADUAL ne trahit jamais et obtient la
-coopération complète. Son principal avantage devrait apparaître contre TESTER. TESTER trahit au premier tour, GRADUAL le punit
-d'un seul D au deuxième tour, ce qui fait passer TESTER en mode TIT-FOR-TAT. TESTER renvoie alors ce D au troisième tour, mais
-il tombe pendant les deux C d'apaisement, si bien que GRADUAL ne le punit pas immédiatement et que les deux stratégies
-reviennent à la coopération complète. Le déroulement à la main donne C D C C C\ldots{} pour GRADUAL et D C D C C\ldots{} pour
-TESTER, soit presque 3 points par tour, contre 2,5 pour TIT-FOR-TAT qui reste bloqué dans l'écho. Pour la même raison, la phase
-d'apaisement devrait couper les chaînes de représailles déclenchées par les trahisons au hasard de JOSS. Contre RANDOM, qui
-trahit environ une fois sur deux, les punitions deviennent très longues et GRADUAL devrait se comporter presque comme ALL-D.
+\paragraph{Contre qui GRADUAL devrait bien jouer.} Contre les stratégies gentilles, GRADUAL obtient la coopération complète.
+Son principal avantage devrait apparaître contre TESTER. TESTER trahit au premier tour, GRADUAL le punit d'un seul D, et la
+riposte de TESTER tombe pendant les deux C d'apaisement, si bien que les deux stratégies reviennent à la coopération complète,
+presque 3 points par tour contre 2,5 pour TIT-FOR-TAT bloqué dans l'écho. La phase d'apaisement devrait aussi couper les
+chaînes de représailles avec JOSS. Contre RANDOM, les punitions deviennent très longues et GRADUAL devrait se comporter presque
+comme ALL-D.
 
-\paragraph{Contre qui GRADUAL devrait mal jouer.} Contre ALL-D, chaque cycle de punition se termine par deux C qui rapportent
-0 point. Les punitions passent par 1, 4, 10, 22, 46 puis 94 trahisons, ce qui fait sur 200 tours 13 coopérations au lieu
-d'une seule pour TIT-FOR-TAT, soit 374 points par partie contre 398. GRADUAL devrait donc perdre un peu plus que TIT-FOR-TAT
-contre ALL-D, mais l'écart reste faible car les punitions s'allongent très vite.
+\paragraph{Contre qui GRADUAL devrait mal jouer.} Contre ALL-D, chaque punition se termine par deux C qui rapportent 0 point.
+Les punitions passent par 1, 4, 10, 22, 46 puis 94 trahisons, soit 13 coopérations sur 200 tours au lieu d'une seule pour
+TIT-FOR-TAT, et 374 points par partie contre 398.
 
-\paragraph{Prédiction.} Dans cette population, GRADUAL perd un peu contre ALL-D mais gagne nettement contre TESTER, JOSS et
-RANDOM par rapport à TIT-FOR-TAT, tout en coopérant pleinement avec les stratégies gentilles. La prédiction est donc que
-GRADUAL terminera devant TIT-FOR-TAT, et probablement premier du tournoi étendu.
+\paragraph{Prédiction.} GRADUAL perd un peu contre ALL-D mais gagne nettement contre TESTER, JOSS et RANDOM par rapport à
+TIT-FOR-TAT, tout en coopérant avec les stratégies gentilles. Elle devrait donc terminer devant TIT-FOR-TAT, et probablement
+première.
 
 \subsection{Tests}
-Avant de lancer le tournoi, les deux stratégies ont été testées dans \texttt{test\_strategies.py} avec la fonction
-\texttt{jouer\_contre\_script}, qui fait jouer une stratégie face à une suite de coups imposée. Les coups attendus ont été
-déroulés à la main à partir des règles. Contre une suite de D, PAVLOV doit alterner C D C D C D. Face à C C D C C C, elle doit
-jouer C C C D D D, car après sa coopération punie elle passe à D, puis garde la trahison qui lui rapporte 5. Contre une suite
-de D, GRADUAL doit jouer C D C C D D D D C C D D D D, et face à une seule trahison, elle doit punir une fois, coopérer deux
-fois puis revenir à la coopération. Deux derniers tests vérifient que \texttt{reset} vide une punition en cours et que les deux
-stratégies obtiennent la coopération complète (600 -- 600 sur 200 tours) contre TIT-FOR-TAT. L'ensemble des 33 tests du
-projet passe.
+Les deux stratégies ont été testées dans \texttt{test\_strategies.py} avec la fonction \texttt{jouer\_contre\_script}, qui fait
+jouer une stratégie face à une suite de coups imposée, à partir de séquences déroulées à la main. Contre une suite de D, PAVLOV
+doit alterner C D C D C D, et GRADUAL jouer C D C C D D D D C C D D D D. Face à une seule trahison, GRADUAL doit punir une
+fois, coopérer deux fois puis revenir à C. Deux derniers tests vérifient que \texttt{reset} vide une punition en cours et que
+les deux stratégies coopèrent complètement avec TIT-FOR-TAT. Les 33 tests du projet passent.
 %à faire : capture de la sortie de python3 -m pytest
 
 \subsection{Résultats}
-Le tournoi a été lancé avec la population étendue, c'est-à-dire les cinq stratégies du cours, les deux stratégies ajoutées
-par Zéinab (GENEROUS-TFT et TIT-FOR-TWO-TATS), PAVLOV et GRADUAL, avec la commande
-\texttt{python3 main.py --population etendue}, au même format qu'à l'étape 1 (5 parties de 200 tours, graine 42). Deux
-lancements successifs donnent les mêmes scores (figure~\ref{fig:etendue}).
+Le tournoi a été lancé avec la population étendue, c'est-à-dire les cinq stratégies du cours, GENEROUS-TFT et
+TIT-FOR-TWO-TATS ajoutées par Zéinab, PAVLOV et GRADUAL, avec la commande \texttt{python3 main.py --population etendue}, au
+même format qu'à l'étape 1. Deux lancements successifs donnent les mêmes scores (figure~\ref{fig:etendue}).
 
 \begin{figure}[h]
   \centering
-  \includegraphics[width=\linewidth]{captures/etape2_classement.png}
+  \includegraphics[width=0.55\linewidth]{captures/etape2_classement.png}
   \caption{Deux lancements successifs de \texttt{python3 main.py --population etendue} (graine 42).}
   \label{fig:etendue}
 \end{figure}
@@ -408,13 +353,11 @@ Rang & Stratégie & Score sans auto play & Score avec auto play \\
 \end{tabular}
 \end{center}
 
-Le rang indiqué est celui du tournoi sans auto play. Avec auto play, l'ordre change seulement en milieu de classement,
-TIT-FOR-TWO-TATS passe devant TESTER et PAVLOV passe devant ALL-D. Avec les graines 1 à 10, GRADUAL est premier et PAVLOV
-septième dans les dix cas, ces résultats ne dépendent donc pas d'un tirage favorable.
+Avec auto play, seul le milieu du classement change, TIT-FOR-TWO-TATS passe devant TESTER et PAVLOV devant ALL-D. Avec les
+graines 1 à 10, GRADUAL est premier et PAVLOV septième dans les dix cas, le résultat ne dépend donc pas d'un tirage favorable.
 
-Pour expliquer les écarts, les matchs de PAVLOV et de GRADUAL ont été comparés à ceux de TIT-FOR-TAT contre les mêmes
-adversaires. Contre les quatre autres stratégies gentilles, les trois obtiennent 3000 points. Le tableau suivant donne les
-points obtenus contre les quatre adversaires où les scores diffèrent.
+Le tableau suivant compare les points de PAVLOV et GRADUAL à ceux de TIT-FOR-TAT contre les adversaires où les scores
+diffèrent. Contre les quatre autres stratégies gentilles, les trois obtiennent 3000 points.
 
 \begin{center}
 \begin{tabular}{lccc}
@@ -432,53 +375,205 @@ JOSS & 2065 & 2224 & 2301 \\
 \end{center}
 
 \subsection{Analyse}
-\paragraph{GRADUAL.} La prédiction est vérifiée, GRADUAL termine premier avec 1350 points d'avance sur TIT-FOR-TAT, et le
-détail des matchs confirme les raisons avancées. Contre ALL-D, GRADUAL perd 120 points par rapport à TIT-FOR-TAT, et son score
-de 1870, soit 374 points par partie, correspond exactement au calcul fait à la main. Contre TESTER, la coopération complète est
-retrouvée après trois tours, ce qui rapporte 480 points de plus que l'écho de TIT-FOR-TAT. Le plus gros gain vient de RANDOM,
-avec 831 points de plus, car les punitions qui s'allongent transforment GRADUAL en quasi ALL-D face à une stratégie qui trahit
-souvent. Contre JOSS, le gain est plus modeste (159 points) et GRADUAL perd tout de même son match, car chaque trahison de JOSS
-allonge la punition suivante, qui provoque à son tour des représailles. La phase d'apaisement limite l'écho sans le supprimer.
+\paragraph{GRADUAL.} La prédiction est vérifiée, GRADUAL termine premier avec 1350 points d'avance sur TIT-FOR-TAT. Contre
+ALL-D, son score de 374 points par partie correspond exactement au calcul fait à la main. Contre TESTER, la coopération
+complète est retrouvée après trois tours, soit 480 points de plus que TIT-FOR-TAT. Le plus gros gain vient de RANDOM (831
+points de plus), car les punitions qui s'allongent transforment GRADUAL en quasi ALL-D. Contre JOSS, le gain est plus modeste
+et GRADUAL perd tout de même son match, car chaque trahison de JOSS allonge la punition suivante, qui provoque à son tour des
+représailles. La phase d'apaisement limite l'écho sans le supprimer.
 
-\paragraph{PAVLOV.} La prédiction est également vérifiée, PAVLOV termine septième, derrière TIT-FOR-TAT. Ses 1000 points de
-retard viennent presque entièrement du match contre ALL-D, où elle obtient 1 point par tour comme prévu. Contre TESTER, le
-cycle de trois tours apparaît bien, avec 2335 points de chaque côté contre 2500 pour TIT-FOR-TAT. Une partie de la prédiction
-est en revanche fausse, puisque contre JOSS, PAVLOV fait mieux que TIT-FOR-TAT (2301 contre 2065). JOSS ne transforme que des
-C en D, jamais l'inverse. Une fois que TIT-FOR-TAT et JOSS ont trahi tous les deux, chacun recopie le D de l'autre et la
-partie reste bloquée en (D, D) jusqu'à la fin, à 2 points par tour. PAVLOV, au contraire, ne reste jamais dans (D, D), qui lui
-rapporte 2, elle change donc de coup et repropose C. Elle reste ainsi dans le cycle à 2,33 points par tour. L'erreur de
-prédiction vient d'une comparaison avec l'écho entre TIT-FOR-TAT et TESTER, alors que contre JOSS, TIT-FOR-TAT finit dans une
-situation encore moins favorable. Enfin, avec l'auto play, PAVLOV passe devant ALL-D, ce qui va dans le sens de la prédiction
-selon laquelle elle progresse quand la population contient davantage de stratégies gentilles.
+\paragraph{PAVLOV.} La prédiction est également vérifiée, PAVLOV termine septième. Ses 1000 points de retard sur TIT-FOR-TAT
+viennent presque entièrement du match contre ALL-D, à 1 point par tour comme prévu, et le cycle prévu contre TESTER apparaît
+bien. Une partie de la prédiction est en revanche fausse, puisque contre JOSS, PAVLOV fait mieux que TIT-FOR-TAT (2301 contre
+2065). JOSS ne transforme que des C en D, jamais l'inverse. Une fois que TIT-FOR-TAT et JOSS ont trahi tous les deux, chacun
+recopie le D de l'autre et la partie reste bloquée en (D, D) à 2 points par tour. PAVLOV, au contraire, ne reste jamais dans
+(D, D) et repropose C, ce qui la maintient dans le cycle à 2,33 points par tour. L'erreur venait d'une comparaison avec l'écho
+contre TESTER, alors que contre JOSS, TIT-FOR-TAT finit dans une situation moins favorable.
 
-\paragraph{Comparaison avec l'étape 1.} L'ajout de quatre stratégies gentilles change complètement le classement. ALL-D,
-premier à l'étape 1, tombe à la sixième place. Contre les nouvelles stratégies qui ripostent, il ne gagne qu'environ 2 points
-par tour, alors que ces stratégies coopèrent entre elles à 3 points par tour. Il ne profite vraiment que de PAVLOV (3500
-points) et de GENEROUS-TFT (3002 points), qui se laissent exploiter. TIT-FOR-TAT remonte à la deuxième place, ce qui confirme
-l'explication donnée à l'étape 1, selon laquelle la victoire d'ALL-D venait d'une population trop petite et trop peu
-coopérative. Le résultat d'Axelrod, selon lequel les stratégies gentilles qui ripostent l'emportent, réapparaît dès que la
-population contient suffisamment de stratégies gentilles, et GRADUAL, qui riposte de façon proportionnée et pardonne, fait
-mieux que TIT-FOR-TAT.
+\paragraph{Comparaison avec l'étape 1.} ALL-D, premier à l'étape 1, tombe à la sixième place. Contre les nouvelles stratégies
+qui ripostent, il ne gagne qu'environ 2 points par tour, alors que ces stratégies coopèrent entre elles à 3 points par tour, et
+il ne profite vraiment que de PAVLOV et de GENEROUS-TFT, qui se laissent exploiter. TIT-FOR-TAT remonte à la deuxième place, ce
+qui confirme que la victoire d'ALL-D à l'étape 1 venait d'une population trop peu coopérative. Le résultat d'Axelrod réapparaît
+dès que la population contient suffisamment de stratégies gentilles, et GRADUAL, qui riposte de façon proportionnée puis
+pardonne, fait mieux que TIT-FOR-TAT.
 
 \section{Étape 3 -- Modification du tournoi}
+\subsection{Choix de la modification et protocole}
+L'énoncé demande au moins deux modifications du tournoi. La sélection et le changement de matrice des gains sont traités par
+Zéinab, la modification retenue ici est le bruit. Ce choix prolonge directement l'étape 2, dont les prédictions annonçaient que
+PAVLOV et GRADUAL réagiraient différemment aux erreurs. Le bruit est aussi plus réaliste qu'un tournoi parfait, puisqu'un
+joueur réel peut mal exécuter un coup.
+
+Chaque coup choisi par une stratégie est inversé avec une probabilité de 5~\%, valeur proposée par l'énoncé. L'inversion a
+lieu après le choix de la stratégie et avant l'enregistrement dans les historiques. Les deux joueurs voient donc le coup
+réellement joué, sans savoir qu'il s'agissait d'une erreur. Le tirage passe par \texttt{rng}, pour que les résultats restent
+reproductibles. Le reste du protocole est celui de l'étape 2, pour pouvoir comparer directement.
+
 \subsection{Prédiction}
+Avec 5~\% de bruit, chaque joueur subit en moyenne 10 coups inversés sur 200 tours, soit une erreur tous les 10 tours environ
+pour l'ensemble des deux joueurs. Ce qui devrait départager les stratégies est le temps qu'elles mettent à revenir à la
+coopération après une erreur.
+
+\paragraph{TIT-FOR-TAT.} Entre deux stratégies de la famille de TIT-FOR-TAT, une erreur déclenche l'effet d'écho de l'étape 1,
+à 2,5 points par tour, dont TIT-FOR-TAT ne sort pas seul. Seule une nouvelle erreur l'arrête, et elle peut ramener la
+coopération comme bloquer les deux joueurs en (D, D) à 2 points par tour. Contre les stratégies gentilles, son score devrait
+passer de 3000 à environ 2400 à 2500 points, et TIT-FOR-TAT devrait perdre sa deuxième place.
+
+\paragraph{PAVLOV.} Contre une autre PAVLOV, une erreur est réparée en deux tours, mais sans auto play PAVLOV n'affronte jamais
+sa copie. Contre TIT-FOR-TAT, une erreur déclenche le cycle de trois tours de l'étape 2. PAVLOV garde toutefois l'avantage de ne
+jamais rester bloquée en (D, D), situation que le bruit va rendre fréquente. Elle devrait donc gagner quelques places, parce
+que les autres perdent plus qu'elle, sans atteindre la première.
+
+\paragraph{GRADUAL.} Le point fort de GRADUAL devrait devenir un piège. Ses punitions dépendent du nombre total de trahisons
+adverses, et même un adversaire parfaitement gentil commet environ 10 trahisons involontaires par partie, que GRADUAL compte
+toutes. Contre TIT-FOR-TAT, chaque punition provoque des ripostes, comptées comme de nouvelles trahisons, et la punition
+suivante s'allonge encore. Vers la fin de la partie, GRADUAL devrait jouer presque comme ALL-D, y compris contre les stratégies
+gentilles, et perdre nettement sa première place.
+
+\paragraph{ALL-D.} Le bruit change peu son score, car ses D inversés lui coûtent un peu contre ceux qui ripostent, et les C
+adverses inversés réduisent un peu l'exploitation des naïfs. En revanche, les stratégies gentilles perdent beaucoup de points
+entre elles. Le classement étant relatif, ALL-D devrait remonter, non parce qu'il gagne plus mais parce que les autres perdent.
+
+\paragraph{GENEROUS-TFT et TIT-FOR-TWO-TATS.} Ces deux stratégies devraient profiter du bruit. GENEROUS-TFT pardonne une
+trahison avec une probabilité de 1/3, si bien qu'un écho dure en moyenne trois tours, et c'est pour les environnements bruités
+que Nowak et Sigmund l'ont proposée. TIT-FOR-TWO-TATS ignore une erreur isolée et ne riposte qu'après deux D consécutifs, ce
+qui n'arrive par erreur qu'avec une probabilité de 0,25~\%. RANDOM n'est pas affecté, et JOSS devrait peu changer de place.
+
+\paragraph{Classement prédit.} Avec le bruit, la capacité à pardonner devrait compter davantage que la capacité à punir.
+GENEROUS-TFT et TIT-FOR-TWO-TATS devraient occuper les deux premières places, suivies de PAVLOV et TIT-FOR-TAT. ALL-D devrait
+remonter vers le milieu du classement, GRADUAL descendre nettement, et RANDOM rester dernier.
+
 \subsection{Résultats}
+Le tournoi a été lancé avec la commande \texttt{python3 main.py --population etendue --bruit 0.05}, deux fois de suite pour
+vérifier que les résultats restent reproductibles malgré le bruit (figure~\ref{fig:bruit}). Le tableau compare le classement
+obtenu à celui de l'étape 2, sans bruit.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.55\linewidth]{captures/etape3_bruit.png}
+  \caption{Deux lancements successifs de \texttt{python3 main.py --population etendue --bruit 0.05} (graine 42).}
+  \label{fig:bruit}
+\end{figure}
+
+\begin{center}
+\begin{tabular}{clccc}
+\toprule
+Rang & Stratégie & Score avec bruit & Score sans bruit & Écart \\
+\midrule
+1 & GRADUAL & 21036 & 22403 (1\textsuperscript{er}) & $-1367$ \\
+2 & ALL-D & 20939 & 20209 (6\textsuperscript{e}) & $+730$ \\
+3 & JOSS & 20215 & 19764 (8\textsuperscript{e}) & $+451$ \\
+4 & TESTER & 20210 & 20801 (4\textsuperscript{e}) & $-591$ \\
+5 & TIT-FOR-TAT & 20049 & 21053 (2\textsuperscript{e}) & $-1004$ \\
+6 & GENEROUS-TFT & 19189 & 20857 (3\textsuperscript{e}) & $-1668$ \\
+7 & PAVLOV & 18902 & 20053 (7\textsuperscript{e}) & $-1151$ \\
+8 & RANDOM & 18889 & 18934 (9\textsuperscript{e}) & $-45$ \\
+9 & TIT-FOR-TWO-TATS & 18850 & 20754 (5\textsuperscript{e}) & $-1904$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Avec un bruit, le classement pourrait dépendre fortement du tirage. Le tournoi a donc été relancé avec les graines 1 à 10.
+GRADUAL et ALL-D occupent les deux premières places dans les dix cas, GRADUAL étant premier huit fois sur dix. GENEROUS-TFT,
+TIT-FOR-TWO-TATS, PAVLOV et RANDOM occupent toujours les quatre dernières places. Le résultat est donc robuste, seul
+l'ordre du milieu de classement varie. L'ajout de l'auto play ne change pas non plus les deux premières places.
+
+Le tableau suivant donne quelques matchs qui expliquent les plus gros écarts, avec les points de la stratégie de la ligne
+contre celle de la colonne, sans puis avec bruit.
+
+\begin{center}
+\begin{tabular}{llcc}
+\toprule
+Stratégie & Adversaire & Sans bruit & Avec bruit \\
+\midrule
+ALL-D & TIT-FOR-TAT & 2015 & 2178 \\
+ALL-D & TIT-FOR-TWO-TATS & 2030 & 2331 \\
+TIT-FOR-TWO-TATS & PAVLOV & 3000 & 2094 \\
+GENEROUS-TFT & GRADUAL & 3000 & 2225 \\
+GRADUAL & PAVLOV & 3000 & 3083 \\
+TIT-FOR-TAT & JOSS & 2065 & 2336 \\
+JOSS & TIT-FOR-TAT & 2090 & 2431 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
 \subsection{Analyse}
+\paragraph{Bilan des prédictions.} La prédiction générale est fausse. Le bruit ne favorise pas les stratégies qui pardonnent,
+il favorise celles qui trahissent ou punissent durement. GENEROUS-TFT et TIT-FOR-TWO-TATS, prédites aux deux premières places,
+perdent le plus de points et finissent sixième et dernière. ALL-D, prédit au milieu du classement, termine deuxième, et
+GRADUAL, prédite en forte baisse, reste première. Deux points de la prédiction sont en revanche vérifiés, TIT-FOR-TAT perd sa
+deuxième place et RANDOM n'est presque pas affecté ($-45$ points).
+
+\paragraph{GRADUAL.} Le mécanisme prévu a bien lieu. En observant une partie contre TIT-FOR-TAT, GRADUAL joue D environ trois
+fois sur quatre dans la première moitié de la partie et plus de neuf fois sur dix dans la seconde, elle devient bien une
+quasi ALL-D. L'erreur de prédiction porte sur la conséquence. Dans un environnement bruité, se comporter comme ALL-D n'est pas
+pénalisé, puisque ALL-D lui-même termine deuxième. GRADUAL garde de plus un début de partie coopératif, et ses longues
+punitions exploitent les stratégies qui pardonnent, comme PAVLOV (3083 points) ou GENEROUS-TFT, qui ne marque plus que 2225
+points contre elle au lieu de 3000.
+
+\paragraph{ALL-D.} La prédiction supposait que le bruit changeait peu le score d'ALL-D. En réalité, il gagne 730 points, et le
+gain vient des erreurs, en particulier contre les stratégies qui ripostent. Quand un D d'ALL-D est inversé en C, il perd
+2 points sur ce tour, mais une stratégie de type TIT-FOR-TAT répond par C au tour suivant, ce qui lui rapporte 5 au lieu de 2.
+De même, chaque C involontaire de l'adversaire lui rapporte 5 au lieu de 2. Les erreurs sont donc en moyenne favorables à
+ALL-D, ce que montrent ses matchs contre TIT-FOR-TAT ($+163$) et TIT-FOR-TWO-TATS ($+301$).
+
+\paragraph{Stratégies qui pardonnent.} Le raisonnement de la prédiction, emprunté à Nowak et Sigmund, vaut pour une population
+où les stratégies qui pardonnent se rencontrent souvent entre elles. Ici, chaque stratégie n'est présente qu'une fois, et le
+bruit rend tous les adversaires moins coopératifs. Pardonner devient alors surtout une occasion d'être exploité.
+TIT-FOR-TWO-TATS perd 906 points contre PAVLOV seule. Après une erreur, PAVLOV trahit, gagne 5 points, garde donc la trahison,
+et TIT-FOR-TWO-TATS attend deux D consécutifs avant de riposter. C'est l'exploitation des adversaires qui ne ripostent pas,
+annoncée à l'étape 2 et rendue possible par le bruit. PAVLOV elle-même ne progresse pas, car elle n'affronte jamais sa copie et
+reste très faible contre ALL-D et GRADUAL.
+
+\paragraph{JOSS.} JOSS gagne trois places alors qu'aucun changement n'était prévu. À l'étape 2, son principal handicap était
+de bloquer les stratégies de type TIT-FOR-TAT en trahison mutuelle, (D, D) jusqu'à la fin de la partie. Le bruit débloque ces
+situations, puisqu'un D inversé en C relance la coopération. JOSS et TIT-FOR-TAT y gagnent tous les deux (respectivement
+$+341$ et $+271$ points dans leur match). De plus, quand tous les joueurs commettent des erreurs, les trahisons volontaires de
+JOSS le distinguent beaucoup moins des autres stratégies.
+
+\paragraph{Conclusion.} Avec 5~\% de bruit, la meilleure qualité n'est plus de pardonner mais de ne pas se laisser exploiter.
+L'erreur principale de la prédiction vient d'un raisonnement fait sur des paires de stratégies gentilles, alors que le
+classement dépend surtout des matchs contre les stratégies qui trahissent, plus nombreuses à se comporter ainsi une fois le
+bruit ajouté.
 
 \section{Difficultés rencontrées}
-\paragraph{Confusion entre scores et coups dans \texttt{jouer\_match}.} Une première version de cette fonction, après avoir
-récupéré le résultat de chaque partie, le relisait dans la matrice des gains, comme dans \texttt{jouer\_partie}, en confondant
-les scores d'une partie avec des coups. Le test \og toujours C contre toujours D \fg{} a provoqué une erreur
-(\texttt{KeyError: (0, 1000)}) au lieu du résultat attendu (0, 5000). La correction repose sur le fait que la matrice ne sert
-qu'à l'intérieur d'une partie, pour transformer deux coups en deux gains. \texttt{jouer\_partie} renvoie déjà des points, qu'il
-suffit d'additionner. Cette erreur montre l'intérêt de tester chaque fonction avec des valeurs calculées à la main.
+\paragraph{Confusion entre scores et coups dans \texttt{jouer\_match}.} Une première version de cette fonction relisait le
+résultat de chaque partie dans la matrice des gains, comme dans \texttt{jouer\_partie}, en confondant les scores d'une partie
+avec des coups. Le test \og toujours C contre toujours D \fg{} a provoqué une erreur (\texttt{KeyError: (0, 1000)}) au lieu du
+résultat attendu (0, 5000). La matrice ne sert qu'à l'intérieur d'une partie, pour transformer deux coups en deux gains, et
+\texttt{jouer\_partie} renvoie déjà des points, qu'il suffit d'additionner. Cette erreur montre l'intérêt de tester chaque
+fonction avec des valeurs calculées à la main.
 
 \paragraph{Simultanéité des coups dans les tests de GRADUAL.} Une première version du test de \texttt{reset} échouait. Le
 script adverse ne contenait que deux coups, C puis D, et la punition était supposée déjà en cours. Or, les coups étant
 simultanés, GRADUAL ne voit la trahison du deuxième tour qu'au moment de jouer le troisième. Le script a été allongé à trois
-coups. Cette erreur montre que la règle de simultanéité décidée pour le moteur doit aussi être prise en compte en écrivant les
-tests des stratégies.
+coups. La règle de simultanéité décidée pour le moteur doit donc aussi être prise en compte en écrivant les tests.
 
 \section{Bilan}
+Le moteur réalisé permet de jouer une partie, un match et un tournoi tous contre tous au format d'Axelrod, avec un classement
+reproductible grâce à une graine unique. Il respecte les règles de l'énoncé, en particulier la simultanéité des coups, et
+protège le contrat de l'étape 0 en transmettant des copies des historiques et en refusant tout coup invalide. Les options
+ajoutées au fil du projet (auto play, population étendue, bruit) ont pu être intégrées sans modifier les stratégies, ce qui
+confirme l'intérêt d'avoir fixé l'interface \texttt{Strategie} dès le départ. Le module de sélection de Zéinab a lui aussi
+réutilisé \texttt{jouer\_partie} sans changement autre que l'ajout d'un paramètre pour la matrice des gains.
+
+Les trois étapes montrent que le classement dépend fortement du contexte. Dans la population du cours, ALL-D gagne parce que
+la coopération est rare. Dès que la population contient davantage de stratégies gentilles, TIT-FOR-TAT remonte et GRADUAL,
+qui punit de façon proportionnée puis pardonne, prend la première place. Avec 5~\% de bruit, ce sont au contraire les
+stratégies qui trahissent ou punissent durement qui dominent, et celles qui pardonnent se font exploiter. Aucune stratégie
+n'est donc la meilleure dans l'absolu, ce qui rejoint l'explication donnée à l'étape 1, selon laquelle le succès de
+TIT-FOR-TAT en 1980 tenait à la population du tournoi.
+
+La démarche imposée par l'énoncé, prédire avant de lancer, a été la partie la plus instructive. Les prédictions de l'étape 2
+étaient presque toutes justes, mais celles de l'étape 3 étaient en grande partie fausses. L'écart vient d'un raisonnement
+fait sur des paires de stratégies, alors que le score total dépend de toute la population. Le détail des matchs renvoyé par le
+moteur a été indispensable pour comprendre ces écarts.
+
+Le travail a plusieurs limites. Les résultats reposent sur 5 parties par match, ce qui laisse une part de hasard en présence
+de RANDOM, de JOSS ou du bruit, même si les classements ont été vérifiés sur dix graines. Chaque stratégie n'est présente
+qu'une fois dans la population, ce qui pénalise les stratégies comme PAVLOV, dont la force apparaît surtout contre leurs
+copies. Une suite naturelle serait de combiner le bruit avec la sélection de Zéinab, pour observer quelles stratégies
+survivent sur plusieurs générations dans un environnement bruité, ou de tester d'autres niveaux de bruit pour trouver le
+seuil à partir duquel pardonner cesse d'être avantageux.
 
 \end{document}

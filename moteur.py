@@ -10,7 +10,14 @@ NB_PARTIES = 5
 NB_TOURS = 200
 GRAINE = 42 
 
-def jouer_partie(strat1, strat2, nb_tours, rng, gains=gains): 
+def appliquer_bruit(coup, bruit, rng):
+    # le coup est inversé avec la probabilité bruit ; aucun tirage si bruit vaut 0,
+    # pour ne pas décaler les tirages de rng et garder les résultats sans bruit identiques
+    if bruit > 0 and rng.random() < bruit:
+        return "D" if coup == "C" else "C"
+    return coup
+
+def jouer_partie(strat1, strat2, nb_tours, rng, gains=gains, bruit=0.0): 
     strat1.reset()
     strat2.reset()
     historique_strat1 = []
@@ -24,6 +31,8 @@ def jouer_partie(strat1, strat2, nb_tours, rng, gains=gains):
             raise ValueError(f"[Erreur]: le coup {coup1} de la stratégie {strat1.nom} n'est pas valide (attendu C ou D).")
         if coup2 not in ("C", "D"):
             raise ValueError(f"[Erreur]: le coup {coup2} de la stratégie {strat2.nom} n'est pas valide (attendu C ou D).")
+        coup1 = appliquer_bruit(coup1, bruit, rng)
+        coup2 = appliquer_bruit(coup2, bruit, rng)
         historique_strat1.append(coup1)
         historique_strat2.append(coup2)
         gain1, gain2 = gains[(coup1, coup2)]
@@ -31,16 +40,16 @@ def jouer_partie(strat1, strat2, nb_tours, rng, gains=gains):
         score2 += gain2
     return score1, score2
 
-def jouer_match(strat1, strat2, nb_parties, nb_tours, rng, gains=gains): 
+def jouer_match(strat1, strat2, nb_parties, nb_tours, rng, gains=gains, bruit=0.0): 
     score1 = 0 
     score2 = 0
     for _ in range (nb_parties): 
-        points1, points2 = jouer_partie(strat1, strat2, nb_tours, rng, gains)
+        points1, points2 = jouer_partie(strat1, strat2, nb_tours, rng, gains, bruit)
         score1 += points1
         score2 += points2
     return score1, score2
 
-def tournoi(strategies, nb_parties, nb_tours, rng, auto_play=False, gains=gains):
+def tournoi(strategies, nb_parties, nb_tours, rng, auto_play=False, gains=gains, bruit=0.0):
     scores = {}
     for strategie in strategies: 
         scores[strategie.nom] = 0
@@ -53,7 +62,7 @@ def tournoi(strategies, nb_parties, nb_tours, rng, auto_play=False, gains=gains)
         meme = strat1 is strat2
         if meme:
             strat2 = copy.deepcopy(strat1)
-        score1, score2 = jouer_match(strat1, strat2, nb_parties, nb_tours, rng, gains)
+        score1, score2 = jouer_match(strat1, strat2, nb_parties, nb_tours, rng, gains, bruit)
         matchs[(strat1.nom, strat2.nom)] = (score1, score2)
         scores[strat1.nom] += score1
         if not meme:
