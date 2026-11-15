@@ -19,15 +19,14 @@
 L'énoncé indique un travail individuel, mais le professeur nous a autorisées oralement à travailler en binôme et à nous
 répartir les tâches comme nous le souhaitions. Le binôme est composé de Neha HAJEE et Zéinab CAMARA.
 
-Nous avons choisi de séparer le travail en deux parties qui communiquent par un contrat commun, la classe \texttt{Strategie} :
-\begin{itemize}
-  \item \textbf{Étape 0 (ensemble)} : définition de l'interface entre le moteur et les stratégies, et des décisions de protocole.
-  \item \textbf{Neha (moteur)} : le fichier \texttt{moteur.py}, c'est-à-dire une partie entre deux stratégies, le tournoi
-  tous contre tous, le calcul des scores, le classement, la gestion de la graine, ainsi que \texttt{main.py} et le README.
-  \item \textbf{Zéinab (stratégies)} : le fichier \texttt{strategies.py} avec les cinq stratégies du cours (ALL-D, RANDOM,
-  TIT-FOR-TAT, TESTER et JOSS), leurs tests à partir des valeurs du cours, et la question sur la victoire de TIT-FOR-TAT.
-  \item \textbf{Étapes 2 et 3} : chacune ajoute au moins une nouvelle stratégie et prend en charge une modification du tournoi.
-\end{itemize}
+Nous avons choisi de séparer le travail en deux parties qui communiquent par un contrat commun, la classe \texttt{Strategie}.
+L'étape 0, c'est-à-dire la définition de l'interface entre le moteur et les stratégies et les décisions de protocole, a été
+faite ensemble. Pour l'étape 1, je me suis chargée du moteur (\texttt{moteur.py}) : une partie entre deux stratégies, le
+tournoi tous contre tous, le calcul des scores, le classement et la gestion de la graine, ainsi que du lancement
+(\texttt{main.py}) et du README. Zéinab s'est chargée des stratégies (\texttt{strategies.py}) : les cinq stratégies du cours
+(ALL-D, RANDOM, TIT-FOR-TAT, TESTER et JOSS), leurs tests à partir des valeurs du cours, et la question sur la victoire de
+TIT-FOR-TAT. Pour les étapes 2 et 3, chacune ajoute au moins une nouvelle stratégie et prend en charge une modification du
+tournoi.
 
 Cette répartition nous permet de travailler en parallèle : tant que le contrat est respecté, le moteur n'a pas besoin de
 connaître le détail des stratégies, et les stratégies n'ont pas besoin de savoir comment le moteur fonctionne. Chacune tient
@@ -71,7 +70,8 @@ tournoi et les résultats peuvent être relancés à l'identique, comme l'exige 
 Une stratégie ne joue pas contre elle-même, mais elle a le droit de jouer contre un autre joueur possédant la même stratégie.
 Nous avons préféré prendre cette décision pour ne pas avantager les stratégies coopératives : un match de TIT-FOR-TAT contre
 sa propre copie rapporterait 600 points par partie, contre 400 pour ALL-D. C'est aussi ce que fait le mini-tournoi du cours,
-où un joueur n'affronte jamais lui-même.
+où un joueur n'affronte jamais lui-même. Le moteur propose toutefois une option \texttt{--auto-play} qui active ces matchs,
+afin de pouvoir comparer avec le tournoi d'Axelrod de 1980, où chaque stratégie affrontait aussi sa propre copie.
 
 \paragraph{TESTER : qu'est-ce qu'une riposte ?}
 Une riposte est une réponse à une trahison par une trahison. Nous regardons uniquement le coup de l'adversaire au tour 2,
@@ -91,7 +91,7 @@ devant, afin de garantir un affichage stable d'une exécution à l'autre.
 \section{Étape 1 : tournoi de base}
 \subsection{Moteur}
 \paragraph{Objectif.} Le moteur doit faire jouer une partie entre deux stratégies, puis un tournoi tous contre tous, sans
-connaître le détail des stratégies, il ne passe que par les méthodes \texttt{reset} et \texttt{jouer} définies à l'étape 0.
+connaître le détail des stratégies : il ne passe que par les méthodes \texttt{reset} et \texttt{jouer} définies à l'étape 0.
 
 \paragraph{Matrice des gains.} Elle est représentée par un dictionnaire dont la clé est le couple de coups (coup du joueur 1,
 coup du joueur 2) et la valeur le couple de gains correspondant, par exemple \texttt{("C", "D")} donne \texttt{(0, 5)}. Le
@@ -101,18 +101,18 @@ gain d'un tour s'obtient ainsi en une seule lecture.
 puis, à chaque tour, demande son coup à chaque stratégie, vérifie ces coups, les ajoute aux historiques et ajoute les gains
 aux scores. Elle renvoie les deux scores de la partie.
 
-\paragraph{Choix de conception.}
-\begin{itemize}
-  \item \textbf{Simultanéité des coups} : les deux coups sont demandés avant d'être ajoutés aux historiques. Aucune stratégie
-  ne peut donc voir le coup de l'adversaire du tour en cours, ce qui respecte la règle de l'énoncé (les deux joueurs choisissent
-  \og en même temps \fg{}).
-  \item \textbf{Copie des historiques} : chaque stratégie reçoit une copie des listes et non les listes du moteur. Une stratégie
-  qui modifierait sa liste, par erreur, ne peut donc pas fausser la partie. Le moteur fait ainsi respecter le contrat de l'étape 0
-  au lieu de simplement faire confiance aux stratégies.
-  \item \textbf{Vérification des coups} : si une stratégie renvoie autre chose que \texttt{"C"} ou \texttt{"D"}, le moteur
-  lève une erreur (\texttt{ValueError}) dont le message donne le nom de la stratégie et le coup reçu. Sans cette vérification,
-  le programme planterait plus loin, lors de la lecture des gains, avec un message beaucoup moins clair.
-\end{itemize}
+\paragraph{Choix de conception.} Trois choix ont été faits lors de l'écriture de \texttt{jouer\_partie}. Le premier concerne la
+simultanéité des coups. Les deux coups sont demandés avant d'être ajoutés aux historiques, si bien qu'aucune stratégie ne peut
+voir le coup de l'adversaire du tour en cours. Cela respecte la règle de l'énoncé, selon laquelle les deux joueurs choisissent
+\og en même temps \fg{}.
+
+Le deuxième choix est la copie des historiques. Chaque stratégie reçoit une copie des listes et non les listes du moteur.
+Une stratégie qui modifierait sa liste par erreur ne peut donc pas fausser la partie. Le moteur fait ainsi respecter le contrat
+de l'étape 0 au lieu de simplement faire confiance aux stratégies.
+
+Le troisième choix est la vérification des coups. Si une stratégie renvoie autre chose que \texttt{"C"} ou \texttt{"D"}, le
+moteur lève une erreur (\texttt{ValueError}) dont le message donne le nom de la stratégie et le coup reçu. Sans cette
+vérification, le programme planterait plus loin, lors de la lecture des gains, avec un message beaucoup moins clair.
 
 \paragraph{Vérification.} Pour contrôler \texttt{jouer\_partie} avant que les stratégies du cours soient écrites, nous l'avons
 lancée sur 200 tours avec deux stratégies très simples, l'une jouant toujours C et l'autre toujours D. Les scores attendus
@@ -131,12 +131,63 @@ toujours C contre toujours C & (600, 600) & (600, 600) \\
 Une stratégie renvoyant \texttt{"X"} provoque bien l'erreur attendue. Les résultats obtenus correspondent aux valeurs
 attendues : la lecture de la matrice et le calcul des scores sont corrects.
 
-\subsubsection{}
-Lors de l'implémentation de jouer_match, après avoir relu le résultat de chaque partie dans la matrice des gains, en confondant les scores 
-d'une partie aves des coups. Le test "toujours C contre D" a provoqué une erreur (KeyError) au lieu du résultat attendu (0, 5000), ce qui 
-a permis de corriger la fonction immédiatement.
+\paragraph{Match.} La fonction \texttt{jouer\_match} fait jouer deux stratégies sur plusieurs parties (5 au format d'Axelrod)
+et additionne les scores de chaque partie. Elle n'a pas besoin d'appeler \texttt{reset}, \texttt{jouer\_partie} le fait déjà
+au début de chaque partie, ce qui garantit que les parties sont indépendantes.
+
+\paragraph{Tournoi.} La fonction \texttt{tournoi} crée un score total à 0 pour chaque stratégie, puis fait jouer un match à
+chaque paire de stratégies et ajoute les points obtenus au total de chacune. Les paires sont générées avec
+\texttt{itertools.combinations}. Ainsi, chaque paire ne se rencontre qu'une seule fois (A contre B, mais pas en plus B contre
+A), et aucune stratégie n'affronte elle-même. La fonction renvoie aussi le détail de chaque match (scores des deux stratégies),
+qui servira à expliquer le classement en montrant contre qui une stratégie gagne ou perd des points.
+
+\paragraph{Option auto play.} Lorsque l'option est activée, les paires sont générées avec
+\texttt{itertools.combinations\_with\_replacement}, qui ajoute les paires (A, A). Deux points ont demandé une attention
+particulière. D'abord, si le même objet jouait des deux côtés, les stratégies qui ont une mémoire interne partageraient cette
+mémoire entre les deux joueurs. Le second joueur est donc une copie indépendante, créée avec \texttt{copy.deepcopy}.
+
+Ensuite, dans un match A contre A, les deux scores reviennent au même nom. Seul le score d'un des deux joueurs est ajouté,
+sinon la stratégie recevrait les points de deux joueurs. Ce choix a une limite. Pour une stratégie aléatoire (RANDOM, JOSS),
+les deux copies n'obtiennent pas le même score, et ce choix revient à garder l'une des deux.
+
+\paragraph{Classement.} La fonction \texttt{classement} trie les stratégies par score total décroissant, puis par ordre
+alphabétique en cas d'égalité, comme décidé à l'étape 0. Le tri se fait sur le couple (score négatif, nom), le signe moins
+permet d'obtenir l'ordre décroissant pour le score tout en gardant l'ordre alphabétique croissant pour le nom.
+
+\paragraph{Lancement (\texttt{main.py}).} Le tournoi se lance en ligne de commande avec \texttt{python3 main.py}. Les paramètres
+sont modifiables par des options (\texttt{--graine}, \texttt{--tours}, \texttt{--parties}, \texttt{--auto-play}) dont les
+valeurs par défaut sont celles du protocole (graine 42, 200 tours, 5 parties, sans auto play). Le générateur aléatoire est créé
+une seule fois à partir de la graine, puis transmis à tout le tournoi. Le classement est affiché dans le terminal, avec les
+paramètres utilisés, et exporté dans un fichier CSV dont le nom contient la graine (et l'auto play s'il est activé), afin de
+garder une trace de chaque lancement sans écraser les précédents. Les commandes sont décrites dans le README.
+
+\paragraph{Vérification du tournoi.} Nous avons lancé le tournoi avec trois stratégies simples : deux stratégies jouant
+toujours C (C1 et C2) et une jouant toujours D, sur 5 parties de 200 tours.
+\begin{center}
+\begin{tabular}{lcccc}
+\toprule
+ & Matchs & C1 & C2 & D \\
+\midrule
+Sans auto play (attendu) & 3 & 3000 & 3000 & 10\,000 \\
+Sans auto play (obtenu) & 3 & 3000 & 3000 & 10\,000 \\
+Avec auto play (attendu) & 6 & 6000 & 6000 & 12\,000 \\
+Avec auto play (obtenu) & 6 & 6000 & 6000 & 12\,000 \\
+\bottomrule
+\end{tabular}
+\end{center}
+Sans auto play, D bat C1 et C2 (5000 points chacun) et C1 et C2 coopèrent entre eux (3000 chacun). Avec auto play, chaque
+stratégie gagne en plus son match contre sa copie : 3000 pour C1 et C2, mais seulement 2000 pour D. On voit déjà que l'auto play
+avantage les stratégies coopératives. Pour le classement, le test sur \{TFT : 9900, ALL-D : 9500, JOSS : 9000, AAA : 9000\}
+donne bien TFT, ALL-D, AAA, JOSS : tri par score, puis ordre alphabétique pour les ex aequo. Enfin, deux tournois lancés avec la
+graine 42 donnent exactement les mêmes scores, et la graine 7 donne des scores différents : les résultats sont reproductibles.
+
 \subsection{Tests}
+%les tests des stratégies sont décrits dans le journal de Zéinab
+%à faire : capture de la sortie des tests
+
 \subsection{Classement obtenu}
+%à faire après la fusion des branches : captures de python3 main.py et python3 main.py --auto-play
+
 \subsection{TFT gagne-t-il ?}
 
 \section{Étape 2 : nouvelle stratégie}
@@ -147,6 +198,13 @@ a permis de corriger la fonction immédiatement.
 \subsection{Analyse}
 
 \section{Difficultés rencontrées}
+\paragraph{Confusion entre scores et coups dans \texttt{jouer\_match}.} Une première version de cette fonction, après avoir
+récupéré le résultat de chaque partie, le relisait dans la matrice des gains, comme dans \texttt{jouer\_partie}, en confondant
+les scores d'une partie avec des coups. Le test \og toujours C contre toujours D \fg{} a provoqué une erreur
+(\texttt{KeyError: (0, 1000)}) au lieu du résultat attendu (0, 5000). La correction repose sur le fait que la matrice ne sert
+qu'à l'intérieur d'une partie, pour transformer deux coups en deux gains. \texttt{jouer\_partie} renvoie déjà des points, qu'il
+suffit d'additionner. Cette erreur montre l'intérêt de tester chaque
+fonction avec des valeurs calculées à la main.
 
 \section{Bilan}
 
