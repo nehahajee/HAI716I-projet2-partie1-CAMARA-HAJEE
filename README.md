@@ -6,11 +6,17 @@ Binôme : Zéinab CAMARA et Neha HAJEE.
 ## Prérequis
 
 - Python 3
-- pytest, pour lancer les tests :
+- pytest (tests) et matplotlib (graphiques de la sélection)
+
+Installation dans un environnement virtuel, à la racine du projet :
 
 ```
-pip install pytest
+python3 -m venv .venv
+source .venv/bin/activate
+pip install pytest matplotlib
 ```
+
+La commande `source .venv/bin/activate` est à relancer dans chaque nouveau terminal.
 
 ## Étape 1 : tournoi de base
 
@@ -61,7 +67,25 @@ python3 -m pytest
 
 ## Étape 3 : modifications du tournoi
 
-À compléter.
+### Sélection et autres gains
+
+Tournoi évolutif : le tournoi est rejoué sur plusieurs générations et la part de chaque stratégie dans la population suit
+son score. L'option `--gains` change la matrice des gains (définies dans `gains.py`) :
+
+| Valeur de `--gains` | Jeu |
+|---|---|
+| `dilemme` | dilemme du prisonnier de l'énoncé (par défaut) |
+| `dilemme_p1` | dilemme avec une punition plus sévère (1/1 si les deux trahissent) |
+| `cerf` | chasse au cerf |
+| `poule` | poule mouillée |
+
+```
+python3 selection.py --seed 42 --generations 100 --csv sel_cours.csv --png sel_cours.png
+python3 selection.py --seed 42 --population etendue --gains cerf --png sel_cerf.png
+```
+
+Autres options : `--tours`, `--parties`, `--population cours|etendue`, `--csv` (export des parts par génération),
+`--png` (graphique).
 
 ## Organisation des fichiers
 
@@ -69,5 +93,7 @@ python3 -m pytest
 - `strategies.py` : les stratégies du cours et les nouvelles stratégies
 - `moteur.py` : une partie, un match, le tournoi tous contre tous et le classement
 - `main.py` : lancement du tournoi en ligne de commande
-- `test_strategies.py` : tests des stratégies
+- `gains.py` : matrices de gains (dilemme et autres jeux 2 × 2)
+- `selection.py` : tournoi évolutif (sélection)
+- `test_strategies.py`, `test_selection.py` : tests des stratégies et de la sélection
 - `journal_HAJEE`, `journal_CAMARA` : journaux de bord

@@ -10,7 +10,7 @@ NB_PARTIES = 5
 NB_TOURS = 200
 GRAINE = 42 
 
-def jouer_partie(strat1, strat2, nb_tours, rng): 
+def jouer_partie(strat1, strat2, nb_tours, rng, gains=gains): 
     strat1.reset()
     strat2.reset()
     historique_strat1 = []
@@ -31,16 +31,16 @@ def jouer_partie(strat1, strat2, nb_tours, rng):
         score2 += gain2
     return score1, score2
 
-def jouer_match(strat1, strat2, nb_parties, nb_tours, rng): 
+def jouer_match(strat1, strat2, nb_parties, nb_tours, rng, gains=gains): 
     score1 = 0 
     score2 = 0
     for _ in range (nb_parties): 
-        points1, points2 = jouer_partie(strat1, strat2, nb_tours, rng)
+        points1, points2 = jouer_partie(strat1, strat2, nb_tours, rng, gains)
         score1 += points1
         score2 += points2
     return score1, score2
 
-def tournoi(strategies, nb_parties, nb_tours, rng, auto_play=False):
+def tournoi(strategies, nb_parties, nb_tours, rng, auto_play=False, gains=gains):
     scores = {}
     for strategie in strategies: 
         scores[strategie.nom] = 0
@@ -53,7 +53,7 @@ def tournoi(strategies, nb_parties, nb_tours, rng, auto_play=False):
         meme = strat1 is strat2
         if meme:
             strat2 = copy.deepcopy(strat1)
-        score1, score2 = jouer_match(strat1, strat2, nb_parties, nb_tours, rng)
+        score1, score2 = jouer_match(strat1, strat2, nb_parties, nb_tours, rng, gains)
         matchs[(strat1.nom, strat2.nom)] = (score1, score2)
         scores[strat1.nom] += score1
         if not meme:

@@ -10,4 +10,7 @@ __pycache__/
 *.fls
 *.fdb_latexmk
 
+# environnement virtuel Python
+.venv/
+
 .DS_Store
