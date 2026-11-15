@@ -147,12 +147,7 @@ Avec auto play (obtenu) & 6 & 6000 & 6000 & 12\,000 \\
 \end{tabular}
 \end{center}
 Avec auto play, C1 et C2 gagnent 3000 points de plus contre leur copie, et D seulement 2000, ce qui montre déjà que l'auto play
-avantage les stratégies coopératives. Des scores fictifs (TFT 9900, ALL-D 9500, JOSS 9000, AAA 9000) donnent bien l'ordre TFT,
-ALL-D, AAA, JOSS. Enfin, deux tournois lancés avec la graine 42 donnent les mêmes scores, et la graine 7 des scores différents.
-
-\subsection{Tests}
-%les tests des stratégies sont décrits dans le journal de Zéinab
-%à faire : capture de la sortie des tests
+avantage les stratégies coopératives. Enfin, deux tournois lancés avec la graine 42 donnent les mêmes scores, et la graine 7 des scores différents.
 
 \subsection{Classement obtenu}
 Le tournoi officiel a été lancé avec les cinq stratégies du cours, au format d'Axelrod, avec la graine 42 et sans auto play
@@ -320,7 +315,9 @@ Les deux stratégies ont été testées dans \texttt{test\_strategies.py} avec l
 jouer une stratégie face à une suite de coups imposée, à partir de séquences déroulées à la main. Contre une suite de D, PAVLOV
 doit alterner C D C D C D, et GRADUAL jouer C D C C D D D D C C D D D D. Face à une seule trahison, GRADUAL doit punir une
 fois, coopérer deux fois puis revenir à C. Deux derniers tests vérifient que \texttt{reset} vide une punition en cours et que
-les deux stratégies coopèrent complètement avec TIT-FOR-TAT. Les 33 tests du projet passent.
+les deux stratégies coopèrent complètement avec TIT-FOR-TAT. Les 33 tests du projet passent à ce stade. Les tests des
+stratégies du cours, de GENEROUS-TFT, de TIT-FOR-TWO-TATS, de la sélection et de la comparaison avec auto play ont été écrits
+par Zéinab et sont décrits dans son journal.
 %à faire : capture de la sortie de python3 -m pytest
 
 \subsection{Résultats}
@@ -407,7 +404,12 @@ joueur réel peut mal exécuter un coup.
 Chaque coup choisi par une stratégie est inversé avec une probabilité de 5~\%, valeur proposée par l'énoncé. L'inversion a
 lieu après le choix de la stratégie et avant l'enregistrement dans les historiques. Les deux joueurs voient donc le coup
 réellement joué, sans savoir qu'il s'agissait d'une erreur. Le tirage passe par \texttt{rng}, pour que les résultats restent
-reproductibles. Le reste du protocole est celui de l'étape 2, pour pouvoir comparer directement.
+reproductibles. Le reste du protocole est celui de l'étape 2, pour pouvoir comparer directement. Quatre tests ont été ajoutés
+dans \texttt{test\_moteur.py}. Avec un bruit de 1, deux ALL-D jouent en réalité toujours C et obtiennent 600 points chacun.
+Avec un bruit nul, le tournoi donne exactement les mêmes scores qu'avant l'ajout du bruit, car aucun tirage n'est fait dans
+\texttt{rng}, ce qui garantit que les résultats des étapes 1 et 2 restent valables. Enfin, deux parties bruitées lancées avec
+la même graine sont identiques, et deux TIT-FOR-TAT ne coopèrent plus complètement avec 5~\% de bruit. Les 41 tests du projet
+passent.
 
 \subsection{Prédiction}
 Avec 5~\% de bruit, chaque joueur subit en moyenne 10 coups inversés sur 200 tours, soit une erreur tous les 10 tours environ

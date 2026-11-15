@@ -118,6 +118,7 @@ son score. L'option `--gains` change la matrice des gains (définies dans `gains
 ```
 python3 selection.py --seed 42 --generations 100 --csv sel_cours.csv --png sel_cours.png
 python3 selection.py --seed 42 --population etendue --gains cerf --png sel_cerf.png
+python3 selection.py --seed 42 --population etendue --gains poule --png sel_poule.png
 ```
 
 Autres options : `--tours`, `--parties`, `--population cours|etendue`, `--csv` (export des parts par génération),
@@ -133,4 +134,5 @@ Autres options : `--tours`, `--parties`, `--population cours|etendue`, `--csv` (
 - `selection.py` : tournoi évolutif (sélection)
 - `compare_auto_jeu.py` : comparaison des classements avec et sans auto play
 - `test_moteur.py`, `test_strategies.py`, `test_selection.py`, `test_compare_auto_jeu.py` : tests
-- `journal_HAJEE`, `journal_CAMARA` : journaux de bord
+- `journal_HAJEE.pdf`, `journal_CAMARA.pdf` : journaux de bord (sources LaTeX en `.tex`)
+- `captures/` : captures d'écran utilisées dans les journaux
