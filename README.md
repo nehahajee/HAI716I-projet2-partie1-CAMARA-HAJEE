@@ -63,7 +63,22 @@ python3 -m pytest
 
 ## Étape 2 : nouvelles stratégies
 
-À compléter.
+Quatre stratégies absentes du cours sont ajoutées dans `strategies.py` : GENEROUS-TFT, TIT-FOR-TWO-TATS, PAVLOV et GRADUAL.
+La population étendue regroupe les cinq stratégies du cours et ces quatre stratégies.
+
+Tournoi avec la population étendue (même format qu'à l'étape 1) :
+
+```
+python3 main.py --population etendue
+python3 main.py --population etendue --auto-play
+```
+
+| Option | Rôle | Valeur par défaut |
+|---|---|---|
+| `--population cours\|etendue` | stratégies du tournoi | `cours` |
+
+Le classement est exporté dans `classement_etendue_graine42.csv` (et `classement_etendue_graine42_autoplay.csv` avec auto play).
+Toutes les options de l'étape 1 (`--graine`, `--tours`, `--parties`) restent utilisables.
 
 ## Étape 3 : modifications du tournoi
 
