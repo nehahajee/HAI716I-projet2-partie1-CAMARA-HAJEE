@@ -1,4 +1,3 @@
-```python
 """
 Contrat commun du jeu du tee-shirt (HAI716I, projet 2, partie 2).
 
@@ -56,7 +55,7 @@ class RegleMiseAJour:
         """
         pass
 
-    def choisir_couleur(self, memoire, couleur_actuelle, rng):
+    def choisir_couleur(self, memoire, couleur_actuelle, rng: Random):
         """
         Détermine la nouvelle couleur d'un agent.
 
@@ -93,4 +92,3 @@ class ParametresSimulation:
         self.nombre_agents = nombre_agents
         self.max_tours = max_tours
         self.graine = graine
-```

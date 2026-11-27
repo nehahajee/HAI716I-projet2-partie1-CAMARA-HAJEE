@@ -9,7 +9,12 @@
 \usepackage[a4paper,margin=2.5cm]{geometry}
 \usepackage{lmodern}
 \usepackage{enumitem}
+\usepackage{xurl}
 \usepackage[hidelinks]{hyperref}
+
+% Prévention des débordements horizontaux
+\setlength{\emergencystretch}{3em}
+\sloppy
 
 \begin{document}
 
@@ -81,10 +86,14 @@ un précédent projet, où chaque stratégie héritait d'une classe
 mère et redéfinissait une méthode obligatoire.
 
 Pour notre simulation, cette méthode est
-\texttt{choisir\_couleur(memoire, couleur\_actuelle, rng)}.
-Elle reçoit les observations précédentes de l'agent, sa couleur
-actuelle et le générateur aléatoire fourni par le moteur.
-Elle retourne ensuite la couleur qu'il devra porter.
+\texttt{choisir\_couleur()}.
+Elle reçoit trois paramètres :
+\texttt{memoire}, qui contient les observations précédentes
+de l'agent, \texttt{couleur\_actuelle}, qui indique sa couleur
+actuelle, et \texttt{rng}, qui correspond au générateur
+aléatoire fourni par le moteur.
+
+Elle retourne ensuite la couleur que l'agent devra porter.
 
 Nous avons également retenu le principe d'un générateur
 aléatoire partagé avec les règles. Cela permet de contrôler
@@ -101,5 +110,120 @@ Cette séparation permet de distinguer clairement les
 responsabilités : le moteur organise les rencontres et les
 mises à jour, tandis que les règles déterminent le comportement
 des agents.
+
+\section{Choix des règles de mise à jour}
+
+Conformément au sujet, nous devons étudier des règles présentées
+en cours, puis proposer au moins deux règles supplémentaires
+qui n'ont pas été étudiées dans ce contexte.
+
+Nous avons retenu les règles suivantes pour commencer notre
+travail.
+
+\subsection{Règles étudiées en cours}
+
+\subsubsection{Majorité simple}
+
+Cette règle consiste pour un agent à adopter la couleur qu'il
+a observée le plus souvent au cours de ses rencontres.
+
+Elle repose donc sur les observations conservées dans la mémoire
+de l'agent.
+
+\subsubsection{Plus forte récompense cumulée (HCR)}
+
+La règle de la plus forte récompense cumulée consiste à choisir
+la couleur qui a rapporté le plus de gains à l'agent depuis
+le début de la simulation.
+
+L'agent compare les gains cumulés obtenus lorsqu'il portait
+chaque couleur et privilégie celle qui lui a rapporté le plus.
+
+En cas d'égalité, nous prévoyons de conserver sa couleur actuelle.
+Il s'agit d'un choix d'implémentation destiné à éviter un
+changement de couleur sans avantage constaté.
+
+\subsection{Règles supplémentaires}
+
+\subsubsection{Copie du partenaire}
+
+Cette règle consiste à adopter la dernière couleur observée
+chez le partenaire rencontré.
+
+Contrairement aux règles précédentes, elle ne cherche pas à
+comparer les fréquences d'observation ou les gains cumulés.
+Elle reproduit simplement le comportement du dernier partenaire
+rencontré.
+
+\subsubsection{Majorité récente}
+
+Cette règle consiste à adopter la couleur observée le plus souvent
+au cours des trois dernières rencontres de l'agent.
+
+Contrairement à la majorité simple, qui prend en compte l'ensemble
+des observations disponibles dans la mémoire, cette règle accorde
+davantage d'importance aux rencontres récentes. Les observations
+plus anciennes ne sont donc pas prises en compte dans la décision.
+
+Si les deux couleurs ont été observées autant de fois, l'agent
+conserve sa couleur actuelle.
+
+\section{Hypothèses et prédictions}
+
+Avant de lancer les simulations, nous formulons des hypothèses
+sur le comportement attendu des différentes règles.
+Ces hypothèses constituent des prédictions qui seront ensuite
+comparées aux résultats expérimentaux.
+
+\subsection{Majorité simple}
+
+Nous nous attendons à ce que cette règle puisse favoriser
+l'apparition d'un consensus lorsque les agents observent
+majoritairement la même couleur.
+
+Cependant, les observations étant locales et dépendantes des
+rencontres aléatoires, certains agents pourraient recevoir des
+informations différentes. Cela pourrait ralentir la convergence
+ou rendre son évolution sensible aux premières rencontres.
+
+\subsection{Plus forte récompense cumulée (HCR)}
+
+Nous faisons l'hypothèse que cette règle favorisera la convergence
+vers une couleur avantageuse pour les agents.
+
+En effet, chaque agent conserve les gains obtenus avec les deux
+couleurs et privilégie celle qui lui a rapporté le plus.
+Nous nous attendons donc à ce que les récompenses accumulées
+influencent progressivement les décisions et favorisent
+l'adoption d'une même couleur.
+
+\subsection{Copie du partenaire}
+
+Nous faisons l'hypothèse que cette règle pourrait favoriser
+la propagation rapide d'une couleur dans la population.
+
+En copiant systématiquement la dernière couleur observée,
+un agent peut transmettre indirectement une couleur à d'autres
+agents au fil des rencontres.
+
+Cependant, cette règle ne tient pas compte des gains obtenus
+ni de la fréquence des couleurs observées. Les changements
+successifs pourraient donc également empêcher la stabilisation
+de la population.
+
+\subsection{Majorité récente}
+
+Nous faisons l'hypothèse que cette règle pourrait permettre
+une adaptation plus rapide aux changements de comportement
+dans la population, puisqu'elle accorde davantage d'importance
+aux rencontres récentes.
+
+En revanche, cette réactivité pourrait rendre les décisions
+plus sensibles aux rencontres aléatoires. Un agent pourrait
+changer de couleur à la suite de quelques rencontres sans que
+cela traduise une véritable tendance dans la population.
+
+Nous nous attendons donc à ce que cette règle soit plus réactive
+que la majorité simple, mais potentiellement moins stable.
 
 \end{document}
