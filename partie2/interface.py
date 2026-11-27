@@ -1,8 +1,9 @@
+```python
 """
 Contrat commun du jeu du tee-shirt (HAI716I, projet 2, partie 2).
 
-Ce fichier définit les structures de données et les méthodes
-communes utilisées par le moteur et les règles de mise à jour.
+Ce fichier définit les éléments partagés entre le moteur
+de simulation et les règles de mise à jour.
 """
 
 from random import Random
@@ -66,43 +67,11 @@ class RegleMiseAJour:
 
         Retour :
         - la nouvelle couleur : ROUGE ou BLEU.
+
+        Chaque règle doit implémenter cette méthode.
         """
         raise NotImplementedError(
             "Chaque règle doit implémenter choisir_couleur()."
-        )
-
-
-# --------------------------------------------------
-# AGENT
-# --------------------------------------------------
-
-class Agent:
-    """
-    Représente un agent participant à la simulation.
-
-    Attributs :
-    - identifiant : identifiant unique de l'agent.
-    - couleur : couleur actuellement portée.
-    - memoire : historique des rencontres de l'agent.
-    - regle : règle utilisée pour choisir sa nouvelle couleur.
-    """
-
-    def __init__(self, identifiant, couleur, regle):
-        self.identifiant = identifiant
-        self.couleur = couleur
-        self.memoire = []
-        self.regle = regle
-
-    def ajouter_observation(self, observation):
-        """Ajoute une observation à la mémoire de l'agent."""
-        self.memoire.append(observation)
-
-    def choisir_nouvelle_couleur(self, rng):
-        """Demande à la règle de déterminer la prochaine couleur."""
-        return self.regle.choisir_couleur(
-            self.memoire,
-            self.couleur,
-            rng
         )
 
 
@@ -116,11 +85,12 @@ class ParametresSimulation:
 
     Attributs :
     - nombre_agents : nombre d'agents participants.
-    - nombre_tours : nombre maximal de tours.
+    - max_tours : nombre maximal de tours.
     - graine : graine utilisée pour les tirages aléatoires.
     """
 
-    def __init__(self, nombre_agents, nombre_tours, graine=None):
+    def __init__(self, nombre_agents, max_tours, graine=None):
         self.nombre_agents = nombre_agents
-        self.nombre_tours = nombre_tours
+        self.max_tours = max_tours
         self.graine = graine
+```
