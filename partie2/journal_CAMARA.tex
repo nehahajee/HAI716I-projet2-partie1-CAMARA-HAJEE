@@ -1,1 +1,105 @@
-# Journal de bord — CAMARA
+\documentclass[12pt,a4paper]{article}
+
+% Encodage et langue
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+
+% Mise en page
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{lmodern}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+
+\begin{document}
+
+\title{Journal de bord - Projet 2 : Jeu du tee-shirt}
+\author{Zéïnab Aly Camara}
+\date{Novembre 2026}
+
+\maketitle
+\tableofcontents
+\newpage
+
+\section{Introduction}
+
+Dans le cadre du projet 2 de l'enseignement HAI716I, nous devons
+concevoir une simulation multi-agents autour du jeu du tee-shirt.
+L'objectif est d'étudier l'évolution des couleurs portées par les
+agents au fil des rencontres et d'observer les conditions dans
+lesquelles une population peut parvenir à un consensus.
+
+Le travail est réalisé en binôme avec Neha. Nous avons réparti
+les responsabilités en deux parties :
+\begin{itemize}
+    \item Neha est responsable du moteur de simulation, des
+    expériences et des tests associés.
+    \item Je suis responsable de l'implémentation des règles
+    de mise à jour, de leurs tests et de mon journal de bord.
+\end{itemize}
+
+\section{Réflexion sur l'architecture}
+
+Avant de commencer l'implémentation, nous avons pris le temps
+de réfléchir à l'organisation du projet et aux échanges entre
+le moteur de simulation et les règles de mise à jour.
+
+Nous avons notamment choisi de définir un fichier commun,
+\texttt{interface.py}, afin de disposer d'un contrat partagé
+et de limiter les problèmes d'intégration entre nos deux
+parties du travail.
+
+Nous avons identifié trois éléments principaux à définir
+dans ce fichier :
+
+\begin{itemize}
+    \item \texttt{Observation} : représente une rencontre entre
+    deux agents et conserve les informations relatives à leurs
+    couleurs ainsi que le gain obtenu.
+
+    \item \texttt{RegleMiseAJour} : classe mère dont hériteront
+    les différentes règles. Elle définit notamment la méthode
+    \texttt{choisir\_couleur()}, chargée de déterminer la nouvelle
+    couleur d'un agent.
+
+    \item \texttt{ParametresSimulation} : regroupe les paramètres
+    nécessaires à l'exécution d'une simulation, comme le nombre
+    d'agents, le nombre maximal de tours et la graine aléatoire.
+\end{itemize}
+
+La classe \texttt{Agent} sera quant à elle définie dans
+\texttt{jeu.py}, sous la responsabilité de Neha. Elle représentera
+chaque participant à la simulation, avec notamment sa couleur,
+sa mémoire et sa règle de mise à jour.
+
+\subsection{Choix de conception}
+
+Nous avons choisi une approche orientée objet pour les règles,
+en nous appuyant sur le principe d'une classe mère commune.
+Cette organisation reprend une approche déjà utilisée dans
+un précédent projet, où chaque stratégie héritait d'une classe
+mère et redéfinissait une méthode obligatoire.
+
+Pour notre simulation, cette méthode est
+\texttt{choisir\_couleur(memoire, couleur\_actuelle, rng)}.
+Elle reçoit les observations précédentes de l'agent, sa couleur
+actuelle et le générateur aléatoire fourni par le moteur.
+Elle retourne ensuite la couleur qu'il devra porter.
+
+Nous avons également retenu le principe d'un générateur
+aléatoire partagé avec les règles. Cela permet de contrôler
+les tirages aléatoires et de reproduire une simulation à partir
+d'une même graine.
+
+Enfin, nous avons identifié une contrainte importante pour
+le moteur : les changements de couleur doivent être appliqués
+simultanément. Les nouvelles couleurs de tous les agents doivent
+donc être calculées à partir de leur état au début du tour,
+avant que les modifications soient effectivement appliquées.
+
+Cette séparation permet de distinguer clairement les
+responsabilités : le moteur organise les rencontres et les
+mises à jour, tandis que les règles déterminent le comportement
+des agents.
+
+\end{document}
