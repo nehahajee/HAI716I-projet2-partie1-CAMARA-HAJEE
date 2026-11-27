@@ -1,1 +1,229 @@
-# Journal de bord — CAMARA
+\documentclass[12pt,a4paper]{article}
+
+% Encodage et langue
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+
+% Mise en page
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{lmodern}
+\usepackage{enumitem}
+\usepackage{xurl}
+\usepackage[hidelinks]{hyperref}
+
+% Prévention des débordements horizontaux
+\setlength{\emergencystretch}{3em}
+\sloppy
+
+\begin{document}
+
+\title{Journal de bord - Projet 2 : Jeu du tee-shirt}
+\author{Zéïnab Aly Camara}
+\date{Novembre 2026}
+
+\maketitle
+\tableofcontents
+\newpage
+
+\section{Introduction}
+
+Dans le cadre du projet 2 de l'enseignement HAI716I, nous devons
+concevoir une simulation multi-agents autour du jeu du tee-shirt.
+L'objectif est d'étudier l'évolution des couleurs portées par les
+agents au fil des rencontres et d'observer les conditions dans
+lesquelles une population peut parvenir à un consensus.
+
+Le travail est réalisé en binôme avec Neha. Nous avons réparti
+les responsabilités en deux parties :
+\begin{itemize}
+    \item Neha est responsable du moteur de simulation, des
+    expériences et des tests associés.
+    \item Je suis responsable de l'implémentation des règles
+    de mise à jour, de leurs tests et de mon journal de bord.
+\end{itemize}
+
+\section{Réflexion sur l'architecture}
+
+Avant de commencer l'implémentation, nous avons pris le temps
+de réfléchir à l'organisation du projet et aux échanges entre
+le moteur de simulation et les règles de mise à jour.
+
+Nous avons notamment choisi de définir un fichier commun,
+\texttt{interface.py}, afin de disposer d'un contrat partagé
+et de limiter les problèmes d'intégration entre nos deux
+parties du travail.
+
+Nous avons identifié trois éléments principaux à définir
+dans ce fichier :
+
+\begin{itemize}
+    \item \texttt{Observation} : représente une rencontre entre
+    deux agents et conserve les informations relatives à leurs
+    couleurs ainsi que le gain obtenu.
+
+    \item \texttt{RegleMiseAJour} : classe mère dont hériteront
+    les différentes règles. Elle définit notamment la méthode
+    \texttt{choisir\_couleur()}, chargée de déterminer la nouvelle
+    couleur d'un agent.
+
+    \item \texttt{ParametresSimulation} : regroupe les paramètres
+    nécessaires à l'exécution d'une simulation, comme le nombre
+    d'agents, le nombre maximal de tours et la graine aléatoire.
+\end{itemize}
+
+La classe \texttt{Agent} sera quant à elle définie dans
+\texttt{jeu.py}, sous la responsabilité de Neha. Elle représentera
+chaque participant à la simulation, avec notamment sa couleur,
+sa mémoire et sa règle de mise à jour.
+
+\subsection{Choix de conception}
+
+Nous avons choisi une approche orientée objet pour les règles,
+en nous appuyant sur le principe d'une classe mère commune.
+Cette organisation reprend une approche déjà utilisée dans
+un précédent projet, où chaque stratégie héritait d'une classe
+mère et redéfinissait une méthode obligatoire.
+
+Pour notre simulation, cette méthode est
+\texttt{choisir\_couleur()}.
+Elle reçoit trois paramètres :
+\texttt{memoire}, qui contient les observations précédentes
+de l'agent, \texttt{couleur\_actuelle}, qui indique sa couleur
+actuelle, et \texttt{rng}, qui correspond au générateur
+aléatoire fourni par le moteur.
+
+Elle retourne ensuite la couleur que l'agent devra porter.
+
+Nous avons également retenu le principe d'un générateur
+aléatoire partagé avec les règles. Cela permet de contrôler
+les tirages aléatoires et de reproduire une simulation à partir
+d'une même graine.
+
+Enfin, nous avons identifié une contrainte importante pour
+le moteur : les changements de couleur doivent être appliqués
+simultanément. Les nouvelles couleurs de tous les agents doivent
+donc être calculées à partir de leur état au début du tour,
+avant que les modifications soient effectivement appliquées.
+
+Cette séparation permet de distinguer clairement les
+responsabilités : le moteur organise les rencontres et les
+mises à jour, tandis que les règles déterminent le comportement
+des agents.
+
+\section{Choix des règles de mise à jour}
+
+Conformément au sujet, nous devons étudier des règles présentées
+en cours, puis proposer au moins deux règles supplémentaires
+qui n'ont pas été étudiées dans ce contexte.
+
+Nous avons retenu les règles suivantes pour commencer notre
+travail.
+
+\subsection{Règles étudiées en cours}
+
+\subsubsection{Majorité simple}
+
+Cette règle consiste pour un agent à adopter la couleur qu'il
+a observée le plus souvent au cours de ses rencontres.
+
+Elle repose donc sur les observations conservées dans la mémoire
+de l'agent.
+
+\subsubsection{Plus forte récompense cumulée (HCR)}
+
+La règle de la plus forte récompense cumulée consiste à choisir
+la couleur qui a rapporté le plus de gains à l'agent depuis
+le début de la simulation.
+
+L'agent compare les gains cumulés obtenus lorsqu'il portait
+chaque couleur et privilégie celle qui lui a rapporté le plus.
+
+En cas d'égalité, nous prévoyons de conserver sa couleur actuelle.
+Il s'agit d'un choix d'implémentation destiné à éviter un
+changement de couleur sans avantage constaté.
+
+\subsection{Règles supplémentaires}
+
+\subsubsection{Copie du partenaire}
+
+Cette règle consiste à adopter la dernière couleur observée
+chez le partenaire rencontré.
+
+Contrairement aux règles précédentes, elle ne cherche pas à
+comparer les fréquences d'observation ou les gains cumulés.
+Elle reproduit simplement le comportement du dernier partenaire
+rencontré.
+
+\subsubsection{Majorité récente}
+
+Cette règle consiste à adopter la couleur observée le plus souvent
+au cours des trois dernières rencontres de l'agent.
+
+Contrairement à la majorité simple, qui prend en compte l'ensemble
+des observations disponibles dans la mémoire, cette règle accorde
+davantage d'importance aux rencontres récentes. Les observations
+plus anciennes ne sont donc pas prises en compte dans la décision.
+
+Si les deux couleurs ont été observées autant de fois, l'agent
+conserve sa couleur actuelle.
+
+\section{Hypothèses et prédictions}
+
+Avant de lancer les simulations, nous formulons des hypothèses
+sur le comportement attendu des différentes règles.
+Ces hypothèses constituent des prédictions qui seront ensuite
+comparées aux résultats expérimentaux.
+
+\subsection{Majorité simple}
+
+Nous nous attendons à ce que cette règle puisse favoriser
+l'apparition d'un consensus lorsque les agents observent
+majoritairement la même couleur.
+
+Cependant, les observations étant locales et dépendantes des
+rencontres aléatoires, certains agents pourraient recevoir des
+informations différentes. Cela pourrait ralentir la convergence
+ou rendre son évolution sensible aux premières rencontres.
+
+\subsection{Plus forte récompense cumulée (HCR)}
+
+Nous faisons l'hypothèse que cette règle favorisera la convergence
+vers une couleur avantageuse pour les agents.
+
+En effet, chaque agent conserve les gains obtenus avec les deux
+couleurs et privilégie celle qui lui a rapporté le plus.
+Nous nous attendons donc à ce que les récompenses accumulées
+influencent progressivement les décisions et favorisent
+l'adoption d'une même couleur.
+
+\subsection{Copie du partenaire}
+
+Nous faisons l'hypothèse que cette règle pourrait favoriser
+la propagation rapide d'une couleur dans la population.
+
+En copiant systématiquement la dernière couleur observée,
+un agent peut transmettre indirectement une couleur à d'autres
+agents au fil des rencontres.
+
+Cependant, cette règle ne tient pas compte des gains obtenus
+ni de la fréquence des couleurs observées. Les changements
+successifs pourraient donc également empêcher la stabilisation
+de la population.
+
+\subsection{Majorité récente}
+
+Nous faisons l'hypothèse que cette règle pourrait permettre
+une adaptation plus rapide aux changements de comportement
+dans la population, puisqu'elle accorde davantage d'importance
+aux rencontres récentes.
+
+En revanche, cette réactivité pourrait rendre les décisions
+plus sensibles aux rencontres aléatoires. Un agent pourrait
+changer de couleur à la suite de quelques rencontres sans que
+cela traduise une véritable tendance dans la population.
+
+Nous nous attendons donc à ce que cette règle soit plus réactive
+que la majorité simple, mais potentiellement moins stable.
+
+\end{document}
