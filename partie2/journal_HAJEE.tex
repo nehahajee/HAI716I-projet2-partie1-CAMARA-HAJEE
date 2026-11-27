@@ -1,1 +1,113 @@
-# Journal de bord — HAJEE
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{graphicx}
+
+\title{Journal de bord -- Projet 2 partie 2 : le jeu du tee-shirt\\HAI716I}
+\author{Neha HAJEE}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{Organisation du binôme}
+Nous avons choisi le sujet B qui porte sur le jeu du tee-shirt, parmi les trois qui sont proposés. Nous simulons une population d'agents
+qui doivent se mettre d'accord sur une convention, la même couleur pour tous, sans avoir de chef et sans vue d'ensemble. Pour cette
+partie du projet, nous avons choisi de nous répartir les tâches via des issues GitHub. Pour ma partie, je m'occupe de l'implémentation du moteur
+(\texttt{jeu.py}), des expériences et des mesures (\texttt{experiences.py}), des tests du moteur (\texttt{test\_moteur.py}) et des modifications
+Voisinage et Gains asymétriques. Zéinab s'occupe de l'implémentation de l'interface (\texttt{interface.py}), des règles de mise à jour
+(\texttt{regles.py}), de leurs tests et des modifications Têtus et Mémoire.
+En commun, nous avons travaillé sur l'intégration de nos deux parties, le README et le rendu.
+Nous avons opté pour cette répartition en particulier car le moteur et les règles ne communiquent que par un contrat commun, l'interface.
+C'est donc le même principe que celui que nous avons suivi à la partie 1.
+
+
+\section{Étape 0 -- Contrat entre moteur et règles}
+\subsection{Interface commune}
+Le fichier \texttt{interface.py} définit le contrat partagé entre le moteur et les règles. Les constantes \texttt{ROUGE} et
+\texttt{BLEU} remplacent les chaînes littérales dans tout le code. La classe \texttt{Observation} encapsule une rencontre du point
+de vue d'un agent : sa couleur, la couleur de son partenaire et le gain obtenu. La classe abstraite \texttt{RegleMiseAJour} sert de
+classe mère à toutes les règles ; chaque sous-classe redéfinit \texttt{choisir\_couleur(memoire, couleur\_actuelle, rng)}, qui
+renvoie la nouvelle couleur. L'implémentation par défaut lève \texttt{NotImplementedError}, et la méthode \texttt{reset} est un
+crochet vide destiné aux règles avec état interne. La classe \texttt{ParametresSimulation} regroupe le nombre d'agents, le nombre
+maximal de tours et la graine.
+
+La signature de \texttt{choisir\_couleur} ne donne accès qu'à la mémoire locale de l'agent et à sa couleur courante : aucune
+information globale sur la population n'est exposée, conformément à la contrainte d'absence de vue d'ensemble. Le générateur
+pseudo-aléatoire \texttt{rng} est instancié une seule fois par le moteur et injecté en paramètre, ce qui garantit la
+reproductibilité des simulations à graine fixée.
+
+\subsection{Écarts avec le plan initial}
+L'issue \#8 prévoyait des couleurs \texttt{"R"}/\texttt{"B"}, une mémoire sous forme de liste de tuples et des règles
+implémentées comme fonctions. Le choix final s'est porté sur des classes : l'accès par attribut
+(\texttt{obs.couleur\_partenaire}) est plus lisible et moins sujet aux erreurs que l'accès par indice (\texttt{obs[1]}), et
+l'héritage depuis une classe mère reprend le modèle de \texttt{Strategie} de la partie 1. La classe \texttt{Agent}, initialement
+dupliquée dans l'interface, est désormais définie uniquement dans \texttt{jeu.py} : l'interface se limite au contrat, l'agent
+relève du moteur.
+
+\section{Protocole}
+\subsection{Paramètres retenus}
+\subsection{Graines et reproductibilité}
+
+\section{Étape 1 -- Le jeu de base}
+\subsection{Moteur}
+\subsubsection{Classe Agent}
+La classe \texttt{Agent} modélise un joueur. Ses attributs sont \texttt{couleur} (chaîne \texttt{ROUGE} ou \texttt{BLEU},
+le tee-shirt porté), \texttt{memoire} (liste d'objets \texttt{Observation}, initialisée vide et propre à chaque instance) et
+\texttt{regle} (instance de \texttt{RegleMiseAJour} injectée par le constructeur). La méthode \texttt{ajout\_observation} ajoute une
+observation en fin de mémoire ; \texttt{mettre\_a\_jour(rng)} délègue le choix de la couleur à \texttt{regle.choisir\_couleur} puis
+l'affecte. La règle est un attribut d'instance et non une méthode de classe, ce qui permet d'attribuer des règles différentes
+selon les agents (nécessaire pour la modification Têtus). La couleur initiale est fournie par l'appelant : la classe n'effectue
+aucun tirage aléatoire.
+
+Consigne précisée par l'enseignant : ni règle de décision globale ni mémoire globale. Une même règle peut être utilisée par
+tous les agents, puisqu'elle est appliquée à la mémoire locale de chacun. En revanche, une instance de règle partagée ne doit
+pas conserver d'état interne, sous peine de constituer une mémoire globale implicite.
+
+\subsubsection{Population}
+\subsubsection{Formation des paires}
+\subsubsection{Déroulement d'un tour}
+\subsubsection{Partie complète et convergence}
+\subsection{Tests du moteur}
+\subsection{Mesures}
+\subsection{Résultats}
+\subsection{Quelle couleur l'emporte ?}
+
+\section{Étape 2 -- Nouvelles règles}
+\subsection{Intégration des règles}
+\subsection{Résultats}
+\subsection{Comparaison avec l'étape 1}
+
+\section{Étape 3 -- Modifications du jeu}
+\subsection{Choix des modifications}
+\subsection{Voisinage}
+\subsubsection{Prédiction}
+\subsubsection{Mise en œuvre}
+\subsubsection{Résultats}
+\subsubsection{Analyse de l'écart}
+\subsection{Gains asymétriques}
+\subsubsection{Prédiction}
+\subsubsection{Mise en œuvre}
+\subsubsection{Résultats}
+\subsubsection{Analyse de l'écart}
+
+\section{Refaire les résultats}
+
+\section{Impasses et changements de cap}
+Première version de \texttt{Agent} : couleur stockée dans une liste, paramètre \texttt{self} absent des méthodes, règle
+définie comme méthode de classe, constructeur sans paramètres. Ces erreurs ont été corrigées, puis la classe a été adaptée au
+contrat final (appel de \texttt{regle.choisir\_couleur(...)}, mémoire composée d'objets \texttt{Observation}). Conclusion : figer
+l'interface avant l'implémentation.
+
+Des balises Markdown présentes dans \texttt{interface.py} provoquaient une \texttt{SyntaxError} à l'import. Elles ont été
+supprimées. Conclusion : vérifier que chaque module s'importe correctement avant de le pousser sur la branche d'intégration.
+
+\section{Bilan}
+
+\end{document}
